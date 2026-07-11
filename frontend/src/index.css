@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+body {
+  background-color: #000;
+  color: #fff;
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection { background: #8B5CF6; color: #fff; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* Sharp dividers and edges */
+.hairline {
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.hairline-strong {
+  border: 1px solid rgba(255,255,255,0.16);
+}
+
+/* Accent underline used for active states */
+.accent-bar {
+  box-shadow: inset 0 -2px 0 0 #8B5CF6;
+}
+
+/* Subtle noise texture (CSS only, no asset) */
+.noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 1px 2px;
+}
+
+/* Marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 30s linear infinite;
+}
