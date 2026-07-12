@@ -90,6 +90,7 @@ export function streamChat(sessionId: string, query: string, h: StreamHandlers):
       if (payload.type === "citations") h.onCitations(payload.data || []);
       else if (payload.type === "token") h.onToken(payload.data || "");
       else if (payload.type === "meta") h.onMeta?.(payload.data);
+      else if (payload.type === "refusal") h.onToken(payload.data || "");
       else if (payload.type === "done") {
         h.onDone(payload.data?.message_id);
         finish();

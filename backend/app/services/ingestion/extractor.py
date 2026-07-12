@@ -1,6 +1,7 @@
 """Orchestrates parsing + chunking for a single document."""
 from typing import Optional
 
+from app.config import settings
 from app.services.ingestion.chunker import ChunkData, get_chunker
 from app.services.ingestion.parser import DocumentParser, ParseResult
 
@@ -25,4 +26,9 @@ class IngestionPipeline:
             document_id,
             filename,
         )
+        if settings.PII_SCRUB_ON_INGEST:
+            from app.services.guardrails.pii import scrub
+
+            for c in chunks:
+                c.text = scrub(c.text)
         return parse_result, chunks

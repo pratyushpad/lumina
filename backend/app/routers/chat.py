@@ -15,6 +15,7 @@ from app.models import Document, Message, Session
 from app.schemas.chat import ChatRequest, ChatResponse, Citation, MessageResponse
 from app.services.generation.llm import LLMService
 from app.services.generation.prompt_builder import PromptBuilder
+from app.services.guardrails.confidence import REFUSAL_MESSAGE, should_refuse
 from app.services.multimodal.vision import VisionService
 from app.services.retrieval.pipeline import RetrievalPipeline
 from app.services.retrieval.types import RetrievalResult
@@ -76,6 +77,28 @@ async def chat(request: Request, session_id: str, body: ChatRequest, db: AsyncSe
 
     tracer = Tracer(body.query, session_id=session_id)
     chunks, retrieval_ms = await _run_retrieval(body.query, document_ids, tracer)
+
+    if should_refuse(chunks):
+        top = max((c.relevance_score for c in chunks), default=0.0)
+        tracer.stage("refusal", 0, {"top_rerank_score": round(top, 4),
+                                    "threshold": settings.MIN_RERANK_SCORE})
+        user_msg = Message(session_id=session_id, role="user", content=body.query)
+        asst_msg = Message(
+            session_id=session_id, role="assistant", content=REFUSAL_MESSAGE,
+            citations=[], model_used="guardrail:refusal",
+            retrieval_time_ms=retrieval_ms, generation_time_ms=0,
+        )
+        db.add_all([user_msg, asst_msg])
+        sess.updated_at = datetime.utcnow()
+        await db.commit()
+        await db.refresh(asst_msg)
+        await tracer.flush(message_id=asst_msg.id)
+        return ChatResponse(
+            message_id=asst_msg.id, content=REFUSAL_MESSAGE, citations=[],
+            retrieval_time_ms=retrieval_ms, generation_time_ms=0,
+            model_used="guardrail:refusal",
+        )
+
     builder = PromptBuilder()
     system = builder.build_system_prompt()
     user = builder.build_user_prompt(body.query, chunks)
@@ -135,6 +158,30 @@ async def chat_stream(request: Request, session_id: str, query: str):
         try:
             tracer = Tracer(query, session_id=session_id)
             chunks, retrieval_ms = await _run_retrieval(query, document_ids, tracer)
+
+            if should_refuse(chunks):
+                top = max((c.relevance_score for c in chunks), default=0.0)
+                tracer.stage("refusal", 0, {"top_rerank_score": round(top, 4),
+                                            "threshold": settings.MIN_RERANK_SCORE})
+                yield {"data": json.dumps({"type": "refusal", "data": REFUSAL_MESSAGE})}
+                async with AsyncSessionLocal() as db:
+                    sess = await db.get(Session, session_id)
+                    user_msg = Message(session_id=session_id, role="user", content=query)
+                    asst_msg = Message(
+                        session_id=session_id, role="assistant", content=REFUSAL_MESSAGE,
+                        citations=[], model_used="guardrail:refusal",
+                        retrieval_time_ms=retrieval_ms, generation_time_ms=0,
+                    )
+                    db.add_all([user_msg, asst_msg])
+                    if sess:
+                        sess.updated_at = datetime.utcnow()
+                    await db.commit()
+                    await db.refresh(asst_msg)
+                    message_id = asst_msg.id
+                await tracer.flush(message_id=message_id)
+                yield {"data": json.dumps({"type": "done", "data": {"message_id": message_id}})}
+                return
+
             citations = [_to_citation(c) for c in chunks]
             yield {
                 "data": json.dumps(

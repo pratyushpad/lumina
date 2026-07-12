@@ -150,6 +150,37 @@ async def eval_generation(items: list[dict], judge_delay: float) -> dict:
     return {"config": GENERATION_CONFIG, "metrics": agg, "n": len(per_query)}
 
 
+async def eval_refusal(items: list[dict]) -> dict:
+    """Threshold sweep for the confidence guardrail: run the production config over
+    answerable AND unanswerable questions, record the top rerank score, and report
+    false-refusal / false-answer rates per threshold."""
+    from app.services.retrieval.pipeline import RetrievalConfig, RetrievalPipeline
+
+    overrides = dict(ABLATIONS)[GENERATION_CONFIG]
+    pipeline = RetrievalPipeline(RetrievalConfig(top_k_candidates=50, top_k_final=5, **overrides))
+
+    scored: list[tuple[bool, float]] = []  # (answerable, top_rerank_score)
+    for item in items:
+        results = await pipeline.run(item["question"], _doc_ids())
+        top = max((r.relevance_score for r in results), default=0.0)
+        scored.append((bool(item.get("relevant_chunk_ids")), top))
+
+    n_ans = sum(1 for a, _ in scored if a)
+    n_una = sum(1 for a, _ in scored if not a)
+    sweep = []
+    for t in (0.15, 0.25, 0.35, 0.5, 0.65, 0.8):
+        false_refusals = sum(1 for a, s in scored if a and s < t)
+        false_answers = sum(1 for a, s in scored if not a and s >= t)
+        sweep.append(
+            {"threshold": t,
+             "false_refusal_rate": false_refusals / n_ans if n_ans else 0.0,
+             "false_answer_rate": false_answers / n_una if n_una else 0.0}
+        )
+        logger.info("threshold=%.2f false_refusal=%.3f false_answer=%.3f",
+                    t, sweep[-1]["false_refusal_rate"], sweep[-1]["false_answer_rate"])
+    return {"n_answerable": n_ans, "n_unanswerable": n_una, "sweep": sweep}
+
+
 def _doc_ids() -> list[str]:
     manifest = json.loads((REPO_ROOT / "eval" / "corpus" / "manifest.json").read_text())
     return [d["document_id"] for d in manifest["documents"].values()]
@@ -170,6 +201,7 @@ async def main() -> None:
         "timestamp": datetime.utcnow().isoformat(),
         "dataset_size": len(items),
         "retrieval": await eval_retrieval(items, mq_delay=args.mq_delay),
+        "refusal": await eval_refusal(items),
     }
     if not args.retrieval_only:
         run["generation"] = await eval_generation(items, args.judge_delay)

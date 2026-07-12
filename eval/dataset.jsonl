@@ -40,3 +40,13 @@
 {"qid": "rag-11", "question": "How did the authors demonstrate that RAG's non-parametric memory can be updated as the world changes?", "reference_answer": "They built an index from the December 2016 DrQA Wikipedia dump, compared outputs against the December 2018 index, and used a list of 82 world leaders who had changed.", "relevant_chunk_ids": ["doc-b5dcf86361d1386b_chunk_74"], "doc": "rag_knowledge_intensive_nlp.pdf"}
 {"qid": "rag-12", "question": "What does RAG's non-parametric memory index consist of and how can it be stored efficiently?", "reference_answer": "21M 728-dimensional vectors (15.3B values), which can be stored at 8-bit floating point precision to manage memory and disk footprints.", "relevant_chunk_ids": ["doc-b5dcf86361d1386b_chunk_186"], "doc": "rag_knowledge_intensive_nlp.pdf"}
 {"qid": "rag-13", "question": "Which library and approximation are used to build RAG's MIPS index?", "reference_answer": "FAISS with a Hierarchical Navigable Small World approximation for fast retrieval.", "relevant_chunk_ids": ["doc-b5dcf86361d1386b_chunk_36"], "doc": "rag_knowledge_intensive_nlp.pdf"}
+{"qid": "una-01", "question": "What is the capital of Australia?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-02", "question": "How do I configure Kubernetes horizontal pod autoscaling?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-03", "question": "What were Apple's revenue figures for fiscal year 2023?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-04", "question": "What is the recommended daily intake of vitamin D for adults?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-05", "question": "How does the French Revolution relate to the storming of the Bastille?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-06", "question": "What are the side effects of ibuprofen?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-07", "question": "Which team won the 2022 FIFA World Cup final?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-08", "question": "How do you make sourdough bread starter from scratch?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-09", "question": "What is the boiling point of nitrogen at standard pressure?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}
+{"qid": "una-10", "question": "What warranty does the product come with and how do I file a claim?", "reference_answer": null, "relevant_chunk_ids": [], "doc": null}

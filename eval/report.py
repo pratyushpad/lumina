@@ -29,6 +29,26 @@ def write_report(run: dict, dest: Path) -> None:
             f"| {_fmt(m['mrr'])} | {_fmt(m['ndcg@10'])} | {int(m['p50_latency_ms'])} ms |"
         )
 
+    ref = run.get("refusal")
+    if ref:
+        lines += [
+            "",
+            "## Confidence-refusal calibration",
+            "",
+            f"Top cross-encoder score per query ({ref['n_answerable']} answerable, "
+            f"{ref['n_unanswerable']} unanswerable questions), production config. "
+            "The gate refuses when the top score is below the threshold "
+            "(`MIN_RERANK_SCORE`).",
+            "",
+            "| Threshold | False-refusal rate | False-answer rate |",
+            "|---|---|---|",
+        ]
+        for row in ref["sweep"]:
+            lines.append(
+                f"| {row['threshold']:.2f} | {_fmt(row['false_refusal_rate'])} "
+                f"| {_fmt(row['false_answer_rate'])} |"
+            )
+
     gen = run.get("generation")
     if gen:
         m = gen["metrics"]

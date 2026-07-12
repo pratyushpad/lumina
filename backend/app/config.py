@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     TOP_K_CANDIDATES: int = 50
     TOP_K_RERANKED: int = 5
 
+    # Guardrails
+    GUARDRAIL_REFUSAL_ENABLED: bool = True
+    MIN_RERANK_SCORE: float = 0.35  # calibrated via the threshold sweep in docs/eval.md
+    PII_SCRUB_ON_INGEST: bool = False
+
     LLM_MODEL: str = "gemini-2.5-flash"
     LLM_MAX_TOKENS: int = 2048
 
