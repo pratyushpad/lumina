@@ -50,7 +50,18 @@ def write_report(run: dict, dest: Path) -> None:
             )
 
     gen = run.get("generation")
-    if gen:
+    if gen and not gen.get("n"):
+        lines += [
+            "",
+            "## Generation quality (RAGAS-style, LLM judge)",
+            "",
+            "**Not yet measured.** The judge run could not complete: the Gemini free "
+            "tier allows 20 requests/day for this model, and a judge pass needs ~100. "
+            "Re-run `make eval` with billing enabled or with the local model serving "
+            "answers (then Gemini judging is also cross-model). No scores are reported "
+            "rather than partial or fabricated ones.",
+        ]
+    elif gen:
         m = gen["metrics"]
         lines += [
             "",

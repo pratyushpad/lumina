@@ -27,7 +27,9 @@ class Settings(BaseSettings):
 
     # Guardrails
     GUARDRAIL_REFUSAL_ENABLED: bool = True
-    MIN_RERANK_SCORE: float = 0.35  # calibrated via the threshold sweep in docs/eval.md
+    # Calibrated via the sweep in docs/eval.md: 0.25 gave 0% false refusals and
+    # 0% false answers on the 42+10 question eval set (0.35 caused one false refusal).
+    MIN_RERANK_SCORE: float = 0.25
     PII_SCRUB_ON_INGEST: bool = False
 
     LLM_MODEL: str = "gemini-2.5-flash"
