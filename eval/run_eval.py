@@ -131,9 +131,13 @@ async def eval_generation(items: list[dict], judge_delay: float, limit: int = 0)
         context_texts = [c.text for c in chunks]
         context = "\n\n".join(context_texts)
 
-        answer, _ = await llm.generate(
-            builder.build_system_prompt(), builder.build_user_prompt(q, chunks)
-        )
+        try:
+            answer, _ = await llm.generate(
+                builder.build_system_prompt(), builder.build_user_prompt(q, chunks)
+            )
+        except Exception as e:
+            logger.warning("generation failed on %s: %s — skipping item", item["qid"], e)
+            continue
         await asyncio.sleep(judge_delay)
 
         try:
@@ -200,15 +204,30 @@ async def main() -> None:
                     help="seconds between queries in query-transform configs")
     ap.add_argument("--gen-limit", type=int, default=0,
                     help="cap generation+judge items (0 = all) to respect daily quota")
+    ap.add_argument("--gen-only", action="store_true",
+                    help="reuse retrieval+refusal sections from the latest run json; "
+                         "only run generation + judge")
     args = ap.parse_args()
 
     items = load_dataset()
-    run: dict = {
-        "timestamp": datetime.utcnow().isoformat(),
-        "dataset_size": len(items),
-        "retrieval": await eval_retrieval(items, mq_delay=args.mq_delay),
-        "refusal": await eval_refusal(items),
-    }
+    if args.gen_only:
+        latest = sorted(RUNS_DIR.glob("run_*.json"))[-1]
+        logger.info("Reusing retrieval/refusal from %s", latest.name)
+        prev = json.loads(latest.read_text())
+        run = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "dataset_size": len(items),
+            "retrieval": prev["retrieval"],
+            # refusal sweep is LLM-free — always recompute rather than trust staleness
+            "refusal": await eval_refusal(items),
+        }
+    else:
+        run = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "dataset_size": len(items),
+            "retrieval": await eval_retrieval(items, mq_delay=args.mq_delay),
+            "refusal": await eval_refusal(items),
+        }
     if not args.retrieval_only:
         run["generation"] = await eval_generation(items, args.judge_delay, args.gen_limit)
 
