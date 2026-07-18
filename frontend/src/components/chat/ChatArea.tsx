@@ -9,7 +9,13 @@ import type { Message } from "@/types";
 
 const MAX_TEXTAREA_PX = 200;
 
-export function ChatArea({ sessionId }: { sessionId: string }) {
+export function ChatArea({
+  sessionId,
+  suggestions,
+}: {
+  sessionId: string;
+  suggestions?: { label: string; query: string; guardrail?: boolean }[];
+}) {
   const messages = useChatStore((s) => s.messages[sessionId] || []);
   const setMessages = useChatStore((s) => s.setMessages);
   const addMessage = useChatStore((s) => s.addMessage);
@@ -52,8 +58,8 @@ export function ChatArea({ sessionId }: { sessionId: string }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, streamingContent]);
 
-  const send = () => {
-    const query = input.trim();
+  const send = (queryOverride?: string) => {
+    const query = (queryOverride ?? input).trim();
     if (!query || isStreaming) return;
     setInput("");
     addMessage(sessionId, {
@@ -100,6 +106,42 @@ export function ChatArea({ sessionId }: { sessionId: string }) {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-6 py-10">
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          {messages.length === 0 && !isStreaming && suggestions && suggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-6 pt-16 text-center"
+            >
+              <div>
+                <div className="text-[10px] uppercase tracking-tight2 text-textMuted font-mono">
+                  Demo session · two papers loaded
+                </div>
+                <h3 className="mt-2 font-display text-2xl font-bold tracking-tight2">
+                  Ask these papers anything.
+                </h3>
+              </div>
+              <div className="flex max-w-2xl flex-wrap justify-center gap-2">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.query}
+                    onClick={() => send(s.query)}
+                    className={`hairline px-3 py-2 text-left text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
+                      s.guardrail
+                        ? "text-textMuted hover:text-textSecondary hover:border-white/20"
+                        : "bg-card text-textSecondary hover:text-white hover:border-white/30"
+                    }`}
+                  >
+                    {s.guardrail && (
+                      <span className="mr-1.5 font-mono text-[9px] uppercase tracking-tight2 text-accent">
+                        guardrail
+                      </span>
+                    )}
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
           {messages.map((m) =>
             m.role === "user" ? (
               <motion.div
@@ -150,7 +192,7 @@ export function ChatArea({ sessionId }: { sessionId: string }) {
               className="flex-1 resize-none overflow-y-auto hairline bg-card px-4 py-3 text-sm outline-none focus:border-white/30 transition-colors placeholder:text-textMuted"
             />
             <button
-              onClick={send}
+              onClick={() => send()}
               disabled={isStreaming || !input.trim()}
               className="hairline-strong bg-white text-black p-3 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-textPrimary/90 transition-colors"
             >

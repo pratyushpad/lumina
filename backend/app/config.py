@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_CHAT: str = "20/minute"
     RATE_LIMIT_UPLOAD: str = "10/minute"
     RATE_LIMIT_DEFAULT: str = "60/minute"
+    # Seed the public demo session at startup (prod: baked demo_docs/ + persistent DB
+    # make this a cheap no-op after the first boot).
+    SEED_DEMO_ON_STARTUP: bool = False
+
     # Comma-separated origins in env (e.g. "https://app.example.com,https://example.com").
     # Wildcards are rejected: allow_credentials=True + "*" would be an open CORS policy.
     CORS_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:5173"]

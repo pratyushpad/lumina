@@ -119,7 +119,7 @@ export default function LandingPage() {
               className="mb-6 inline-flex items-center gap-2 hairline bg-card px-3 py-1.5 text-[10px] uppercase tracking-tight2 font-mono text-textSecondary"
             >
               <span className="h-1.5 w-1.5 bg-accent animate-pulse" />
-              v1.0 · Gemini 2.5 Flash · ChromaDB
+              v2.0 · Gemini 2.5 Flash · pgvector · hybrid BM25 + rerank
             </motion.div>
 
             <h1 className="font-display text-[clamp(3rem,9vw,9rem)] font-bold leading-[0.92] tracking-tight3">
@@ -144,14 +144,14 @@ export default function LandingPage() {
               transition={{ delay: 0.65, duration: 0.6 }}
               className="mt-10 flex flex-wrap items-center gap-3"
             >
-              <Link to="/app">
+              <Link to="/app?session=demo">
                 <GradientButton variant="primary">
-                  Open Lumina <ArrowRight size={14} />
+                  Try the live demo <ArrowRight size={14} />
                 </GradientButton>
               </Link>
-              <a href="#how">
-                <GradientButton variant="outline">How it works</GradientButton>
-              </a>
+              <Link to="/app">
+                <GradientButton variant="outline">Open Lumina</GradientButton>
+              </Link>
               <div className="ml-2 inline-flex items-center gap-2 text-[10px] uppercase tracking-tight2 font-mono text-textMuted">
                 <kbd className="hairline px-1.5 py-0.5 bg-card">
                   <Command size={10} className="inline -mt-px" />K
@@ -287,13 +287,17 @@ export default function LandingPage() {
             <SplitText text="Ask anything." inView stagger={0.07} />
           </h2>
           <p className="mx-auto mt-6 max-w-lg text-textSecondary">
-            No signup. Local-first. Your documents stay on your machine.
+            No signup. Open source, self-hostable. The demo session comes pre-loaded with two
+            classic papers — a cited answer is one click away.
           </p>
-          <div className="mt-10 inline-flex">
-            <Link to="/app">
+          <div className="mt-10 inline-flex flex-wrap justify-center gap-3">
+            <Link to="/app?session=demo">
               <GradientButton variant="primary">
-                Open Lumina <ArrowRight size={14} />
+                Try the live demo <ArrowRight size={14} />
               </GradientButton>
+            </Link>
+            <Link to="/app">
+              <GradientButton variant="outline">Upload your own</GradientButton>
             </Link>
           </div>
         </motion.div>
@@ -301,7 +305,7 @@ export default function LandingPage() {
 
       <footer className="px-6 py-8 flex flex-wrap items-center justify-between gap-3 text-[10px] uppercase tracking-tight2 font-mono text-textMuted">
         <span>LUMINA · multimodal RAG · built with Gemini 2.5</span>
-        <span>v1.0</span>
+        <span>v2.0</span>
       </footer>
     </div>
   );

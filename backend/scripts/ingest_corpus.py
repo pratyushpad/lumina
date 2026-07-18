@@ -31,7 +31,9 @@ def doc_id_for(filename: str) -> str:
     return "doc-" + hashlib.sha256(filename.encode("utf-8")).hexdigest()[:16]
 
 
-async def ingest(corpus_dir: Path, session_id: str, strategy: str | None) -> dict:
+async def ingest(
+    corpus_dir: Path, session_id: str, strategy: str | None, session_name: str = "Eval Corpus"
+) -> dict:
     from app.config import settings
     from app.database import AsyncSessionLocal
     from app.migrations import run_migrations
@@ -69,7 +71,7 @@ async def ingest(corpus_dir: Path, session_id: str, strategy: str | None) -> dic
     async with AsyncSessionLocal() as db:
         sess = await db.get(Session, session_id)
         if sess is None:
-            db.add(Session(id=session_id, name="Eval Corpus"))
+            db.add(Session(id=session_id, name=session_name))
             await db.commit()
 
     for path in files:

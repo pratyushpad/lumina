@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -50,6 +51,16 @@ async def lifespan(app: FastAPI):
             )
         ],
     )
+    if settings.SEED_DEMO_ON_STARTUP:
+        from scripts.seed_demo import seed_demo
+
+        # Background task: seeding (first boot only) must not delay /health.
+        seed_task = asyncio.create_task(seed_demo())
+        seed_task.add_done_callback(
+            lambda t: logger.error("Demo seeding failed: %s", t.exception())
+            if not t.cancelled() and t.exception()
+            else None
+        )
     logger.info("Lumina backend ready (models warmed)")
     yield
 
