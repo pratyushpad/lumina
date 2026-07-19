@@ -15,6 +15,14 @@ from app.services.generation.providers.openai_compat import OpenAICompatProvider
 
 logger = logging.getLogger("lumina.providers.router")
 
+
+class AllProvidersFailedError(Exception):
+    """Every configured LLM provider failed (usually free-tier rate limits).
+
+    The message carries provider internals for logs; API error handlers must map
+    this to a clean 503 without exposing the detail to clients.
+    """
+
 _HEALTH_TTL_S = 30.0
 
 
@@ -69,7 +77,7 @@ class ProviderRouter:
                 self._mark_down(p)
                 if i < len(candidates) - 1:
                     logger.warning("Provider %s failed (%s); falling back", p.name, e)
-        raise last_err  # type: ignore[misc]
+        raise AllProvidersFailedError(str(last_err)) from last_err
 
     async def generate_stream(self, system: str, user: str) -> AsyncGenerator[StreamEvent, None]:
         """Falls back only if a provider fails BEFORE emitting any token (once tokens
@@ -86,9 +94,11 @@ class ProviderRouter:
                 return
             except Exception as e:
                 self._mark_down(p)
-                if emitted or i == len(candidates) - 1:
+                if emitted:
                     raise
+                if i == len(candidates) - 1:
+                    raise AllProvidersFailedError(str(e)) from e
                 last_err = e
                 logger.warning("Provider %s failed pre-stream (%s); falling back", p.name, e)
         if last_err:
-            raise last_err
+            raise AllProvidersFailedError(str(last_err)) from last_err
