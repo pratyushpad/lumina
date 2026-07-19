@@ -1,5 +1,14 @@
 # Lumina — Production-Shaped Multimodal RAG
 
+[![CI](https://github.com/pratyushpad/lumina/actions/workflows/ci.yml/badge.svg)](https://github.com/pratyushpad/lumina/actions/workflows/ci.yml)
+
+**Live demo: [lumina-rag-two.vercel.app](https://lumina-rag-two.vercel.app)** — click
+*Try the live demo* for a pre-seeded session over two classic papers; a cited answer
+is one click away. (API: [prat20-lumina-api.hf.space](https://prat20-lumina-api.hf.space/docs),
+free-tier hosted — first answer of the day may take a few extra seconds.)
+
+![Lumina demo — suggested question to cited answer](docs/demo.gif)
+
 Upload PDFs / images / text into isolated sessions, then chat with cited, grounded
 answers. Built to be **measured, not vibed**: hybrid BM25+dense retrieval with RRF
 fusion, a cross-encoder reranker, a local-GPU/hosted LLM provider abstraction,

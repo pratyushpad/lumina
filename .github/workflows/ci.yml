@@ -31,6 +31,11 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: pip install -r requirements.txt
+      - name: Apply migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://lumina:lumina@localhost:5433/lumina
+        run: alembic upgrade head
       - name: Run tests (incl. pgvector integration)
         working-directory: backend
         env:
