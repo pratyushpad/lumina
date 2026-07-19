@@ -119,6 +119,7 @@ LOCAL_LLM_API_KEY=gsk_...
 ## Evaluation
 
 ```bash
+make fetch-papers     # download the arXiv corpus PDFs (not committed; sha256-verified)
 make ingest           # deterministic corpus ingestion (stable chunk ids + manifest)
 make eval-retrieval   # ablation table + refusal-threshold sweep (no LLM cost)
 make eval             # + generation metrics with the LLM judge (throttled)

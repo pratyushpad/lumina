@@ -6,6 +6,11 @@ chunking) into the `eval-corpus` session; `manifest.json` (generated) records th
 chunk ids each run produces so `eval/dataset.jsonl` can reference ground-truth
 chunks stably.
 
+The two arXiv PDFs are **not committed** — arXiv's perpetual non-exclusive
+license grants distribution rights to arXiv, not downstream repos. Run
+`make fetch-papers` (or `python scripts/fetch_papers.py`) to download them with
+SHA-256 verification against the frozen copies before `make ingest`.
+
 | File | Source | License / provenance |
 |---|---|---|
 | `attention_is_all_you_need.pdf` | arXiv:1706.03762v7 (Vaswani et al., 2017) | arXiv.org perpetual non-exclusive license; figure- and table-heavy — exercises PDF image extraction |

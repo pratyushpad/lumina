@@ -18,6 +18,12 @@ RUN python -c "from sentence_transformers import SentenceTransformer, CrossEncod
     CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
 
 COPY . .
+# Demo papers are fetched from arXiv at build time (not committed to the repo —
+# arXiv's license doesn't cover redistribution) so cold starts still never
+# download at runtime and the demo session can re-seed idempotently.
+RUN python -c "import urllib.request as u; \
+    u.urlretrieve('https://export.arxiv.org/pdf/1706.03762v7', 'demo_docs/attention-is-all-you-need.pdf'); \
+    u.urlretrieve('https://export.arxiv.org/pdf/1512.03385v1', 'demo_docs/resnet-deep-residual-learning.pdf')"
 RUN mkdir -p storage/uploads storage/processed/images && chown -R appuser:appuser /app
 USER appuser
 

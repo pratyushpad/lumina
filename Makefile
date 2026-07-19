@@ -20,7 +20,10 @@ test:
 	cd backend && .venv/bin/python -m pytest -q
 
 # --- Data / Eval ---
-ingest:
+fetch-papers:
+	$(PY) scripts/fetch_papers.py
+
+ingest: fetch-papers
 	$(PY) backend/scripts/ingest_corpus.py
 
 eval:
