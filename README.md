@@ -31,8 +31,12 @@ Measured on the frozen 52-question eval set over a documented 4-document corpus
   (e.g. hybrid recall@5 0.762 vs 0.619).
 - Multi-query rewriting added ~700 ms p50 and moved **no** metric — measured, and
   therefore off by default.
-- Confidence refusal gate calibrated against 10 unanswerable questions
-  (false-refusal / false-answer sweep in `docs/eval.md`).
+- Confidence refusal gate calibrated against 10 unanswerable questions — the
+  two-stage gate (cross-encoder + bi-encoder second chance) shows 0% false
+  refusals and 0% false answers across the full threshold sweep (`docs/eval.md`).
+- Generation (llama-3.3-70b via Groq, graded cross-family by a Gemini judge,
+  n=18): faithfulness 0.97, answer relevancy 0.97, context recall 0.94, context
+  precision 0.60 — caveats in `docs/eval.md`.
 
 ## Architecture
 
