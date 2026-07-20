@@ -31,6 +31,7 @@ export function ChatArea({
 
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string | null>(null);
+  const [capacityNotice, setCapacityNotice] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -66,6 +67,7 @@ export function ChatArea({
     const query = (queryOverride ?? input).trim();
     if (!query || isStreaming) return;
     setInput("");
+    setCapacityNotice(null);
     addMessage(sessionId, {
       id: `tmp-${Date.now()}`,
       role: "user",
@@ -78,6 +80,12 @@ export function ChatArea({
       onCitations: (c) => setStreamingCitations(c),
       onToken: (t) => appendToken(t),
       onMeta: (m) => setStreamingMeta(m),
+      onCapacity: (message) => {
+        // Not an error: the day's free-tier quota is spent. Keep the question in
+        // place, surface a calm banner, and drop the empty assistant turn.
+        setCapacityNotice(message);
+        clearStream();
+      },
       onDone: (messageId) => {
         const finalContent = useChatStore.getState().streamingContent;
         const finalCitations = useChatStore.getState().streamingCitations;
@@ -201,6 +209,23 @@ export function ChatArea({
       </div>
       <div className="sticky bottom-0 border-t border-line bg-background p-4">
         <div className="mx-auto flex max-w-3xl flex-col gap-2">
+          {capacityNotice && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              role="status"
+              className="flex items-start justify-between gap-3 hairline bg-card px-3 py-2 text-xs text-textSecondary"
+            >
+              <span>{capacityNotice}</span>
+              <button
+                onClick={() => setCapacityNotice(null)}
+                aria-label="Dismiss"
+                className="shrink-0 font-mono text-[10px] uppercase tracking-tight2 text-textMuted hover:text-textPrimary transition-colors"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          )}
           <div className="flex items-end gap-2">
             <textarea
               ref={textareaRef}

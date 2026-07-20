@@ -3,5 +3,15 @@ from app.models.document import Document
 from app.models.message import Message
 from app.models.session import Session
 from app.models.trace import Trace, TraceStage
+from app.models.usage import DemoAnswerCache, UsageDaily
 
-__all__ = ["Chunk", "Document", "Message", "Session", "Trace", "TraceStage"]
+__all__ = [
+    "Chunk",
+    "DemoAnswerCache",
+    "Document",
+    "Message",
+    "Session",
+    "Trace",
+    "TraceStage",
+    "UsageDaily",
+]

@@ -24,6 +24,16 @@ function ProviderBadge({
   meta?: StreamMeta | null;
   modelUsed?: string | null;
 }) {
+  // A cached demo answer stores the ORIGINAL provider:model in `model`, so show
+  // that with a "cached" marker rather than "cache:local:…".
+  if (meta?.cached) {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-tight2 text-textMuted">
+        <span className="h-1.5 w-1.5 bg-textMuted" />
+        cached{meta.model ? ` · ${meta.model}` : ""}
+      </span>
+    );
+  }
   const label = meta ? `${meta.provider}:${meta.model}` : modelUsed;
   if (!label) return null;
   const local = label.startsWith("local:");

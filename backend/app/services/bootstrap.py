@@ -14,6 +14,7 @@ from app.config import settings
 from app.constants import DEMO_SESSION_ID, DEMO_SESSION_NAME
 from app.database import AsyncSessionLocal
 from app.models import Document, Message
+from app.services.capacity import clear_demo_answer_cache
 from app.services.ingestion.corpus import doc_id_for, ingest
 
 logger = logging.getLogger("lumina.seed_demo")
@@ -59,4 +60,7 @@ async def seed_demo(force: bool = False) -> None:
     manifest = await ingest(
         DEMO_DOCS_DIR, DEMO_SESSION_ID, strategy=None, session_name=DEMO_SESSION_NAME
     )
+    # The cached answers were generated against the previous corpus; a fresh
+    # ingest can change chunk ids and citations, so drop them.
+    await clear_demo_answer_cache()
     logger.info("Demo seeded: %d documents", len(manifest["documents"]))

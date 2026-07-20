@@ -9,6 +9,7 @@ import time
 from collections.abc import AsyncGenerator
 
 from app.config import settings
+from app.services.capacity import CapacityExhaustedError, CapacityService
 from app.services.generation.providers.base import GenResult, LLMProvider, StreamEvent
 from app.services.generation.providers.gemini import GeminiProvider
 from app.services.generation.providers.openai_compat import OpenAICompatProvider
@@ -40,6 +41,7 @@ class ProviderRouter:
         if not self.providers:
             raise ValueError("LLM_PROVIDER_ORDER is empty")
         self._health: dict[str, tuple[float, bool]] = {}  # name -> (checked_at, ok)
+        self.capacity = CapacityService()
 
     @classmethod
     def get(cls) -> "ProviderRouter":
@@ -66,12 +68,27 @@ class ProviderRouter:
         # Never return an empty list: if everything looks down, try them all anyway.
         return healthy or list(self.providers)
 
-    async def generate(self, system: str, user: str) -> GenResult:
+    async def _affordable_candidates(self) -> list[LLMProvider]:
+        """Healthy providers that still have daily budget left.
+
+        If every provider we would otherwise try is over its free-tier budget,
+        raise CapacityExhaustedError so the caller can show a capacity message
+        rather than hammering an exhausted provider into a 429.
+        """
         candidates = await self._candidates()
+        affordable = [p for p in candidates if not await self.capacity.is_exhausted(p.name)]
+        if not affordable:
+            raise CapacityExhaustedError("all providers over daily budget")
+        return affordable
+
+    async def generate(self, system: str, user: str) -> GenResult:
+        candidates = await self._affordable_candidates()
         last_err: Exception | None = None
         for i, p in enumerate(candidates):
             try:
-                return await p.generate(system, user)
+                result = await p.generate(system, user)
+                await self.capacity.record(p.name, result.completion_tokens)
+                return result
             except Exception as e:
                 last_err = e
                 self._mark_down(p)
@@ -83,13 +100,17 @@ class ProviderRouter:
         """Falls back only if a provider fails BEFORE emitting any token (once tokens
         have streamed to the client, switching providers mid-answer is worse than
         surfacing the error)."""
-        candidates = await self._candidates()
+        candidates = await self._affordable_candidates()
         last_err: Exception | None = None
         for i, p in enumerate(candidates):
             emitted = False
             try:
                 async for ev in p.generate_stream(system, user):
                     emitted = True
+                    # The final event carries usage; bill it before handing the
+                    # client its done signal.
+                    if isinstance(ev, GenResult):
+                        await self.capacity.record(p.name, ev.completion_tokens)
                     yield ev
                 return
             except Exception as e:

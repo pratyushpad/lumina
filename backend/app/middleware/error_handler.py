@@ -5,9 +5,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.services.capacity import CapacityExhaustedError
 from app.services.generation.providers.router import AllProvidersFailedError
 
 logger = logging.getLogger("lumina.errors")
+
+CAPACITY_MESSAGE = (
+    "Free-tier capacity for today is used up. It resets at 00:00 UTC — please "
+    "try again then, or run Lumina locally with your own API keys."
+)
 
 
 def register_error_handlers(app: FastAPI) -> None:
@@ -23,6 +29,17 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": exc.detail},
+        )
+
+    @app.exception_handler(CapacityExhaustedError)
+    async def capacity_handler(request: Request, exc: CapacityExhaustedError):
+        # 429, not 503: the service is healthy, the day's free quota is spent.
+        # The `capacity` flag lets the client render the calm banner rather than
+        # a generic error toast.
+        logger.info("Capacity exhausted: %s", exc)
+        return JSONResponse(
+            status_code=429,
+            content={"error": CAPACITY_MESSAGE, "capacity": True},
         )
 
     @app.exception_handler(AllProvidersFailedError)

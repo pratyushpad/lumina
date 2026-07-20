@@ -19,10 +19,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.constants import DEMO_SESSION_ID
 from app.database import AsyncSessionLocal
 from app.deps.owner import load_session
 from app.models import Document, Message, Session
 from app.schemas.chat import Citation
+from app.services.capacity import (
+    CapacityExhaustedError,
+    CapacityService,
+    cached_demo_answer,
+    store_demo_answer,
+)
 from app.services.generation.llm import LLMService
 from app.services.generation.prompt_builder import PromptBuilder
 from app.services.guardrails.confidence import REFUSAL_MESSAGE, should_refuse
@@ -34,9 +41,16 @@ from app.services.tracing import Tracer
 logger = logging.getLogger("lumina.chat")
 
 REFUSAL_LABEL = "guardrail:refusal"
+CACHE_LABEL = "cache"
 # Shown to the client when a turn fails. Details go to the logs only — the SSE
 # path must not echo internals any more than the JSON error handler does.
 STREAM_ERROR_MESSAGE = "Something went wrong generating that answer. Please try again."
+# Shown when every provider is over its daily free-tier budget. Not an error —
+# the app is working, the day's quota is spent.
+CAPACITY_MESSAGE = (
+    "Free-tier capacity for today is used up. It resets at 00:00 UTC — please "
+    "try again then, or run Lumina locally with your own API keys."
+)
 
 
 @dataclass
@@ -206,6 +220,28 @@ class ChatService:
         )
         turn.tracer.set_generation(result.provider, result.model, result.tokens_per_sec)
 
+    async def _cached_demo(self, session_id: str, query: str, turn: "Turn") -> dict | None:
+        """A stored answer for a repeat demo question, or None. Records a trace
+        stage on a hit; retrieval already ran, so the freshly retrieved
+        citations are reused and only the answer text is replayed — no provider
+        tokens are spent."""
+        if session_id != DEMO_SESSION_ID:
+            return None
+        cached = await cached_demo_answer(query)
+        if cached is None:
+            return None
+        turn.tracer.stage("cache_hit", 0, {"source": "demo_answer_cache"})
+        return cached
+
+    async def _demo_cache_store(
+        self, session_id: str, query: str, answer: str, turn: "Turn", model_used: str
+    ) -> None:
+        if session_id != DEMO_SESSION_ID:
+            return
+        await store_demo_answer(
+            query, answer, [c.model_dump() for c in turn.citations], model_used
+        )
+
     async def answer(
         self,
         query: str,
@@ -223,11 +259,19 @@ class ChatService:
             )
             return message_id, REFUSAL_MESSAGE, [], turn.retrieval_ms, 0, REFUSAL_LABEL
 
+        cached = await self._cached_demo(session_id, query, turn)
+        if cached is not None:
+            model = cached["model_used"] or CACHE_LABEL
+            message_id = await self.persist_turn(turn, cached["answer"], model, 0)
+            return message_id, cached["answer"], turn.citations, turn.retrieval_ms, 0, model
+
         system, user = self.build_prompt(turn)
-        result = await LLMService.get().generate_result(system, user)
+        async with CapacityService.generation_slot():
+            result = await LLMService.get().generate_result(system, user)
         gen_ms = int(result.duration_s * 1000)
         self._record_generation(turn, result, gen_ms)
         message_id = await self.persist_turn(turn, result.text, result.label, gen_ms)
+        await self._demo_cache_store(session_id, query, result.text, turn, result.label)
         return (
             message_id,
             result.text,
@@ -262,15 +306,41 @@ class ChatService:
 
             yield event("citations", [c.model_dump() for c in turn.citations])
 
+            # Repeat demo questions replay a stored answer at zero provider cost.
+            cached = await self._cached_demo(session_id, query, turn)
+            if cached is not None:
+                model = cached["model_used"] or CACHE_LABEL
+                yield event("token", cached["answer"])
+                yield event(
+                    "meta",
+                    {
+                        "provider": CACHE_LABEL,
+                        "model": model,
+                        "cached": True,
+                        "tokens_per_sec": 0,
+                        "completion_tokens": 0,
+                        "tokens_estimated": True,
+                        "generation_time_ms": 0,
+                    },
+                )
+                message_id = await self.persist_turn(turn, cached["answer"], model, 0)
+                yield event("done", {"message_id": message_id})
+                return
+
             system, user = self.build_prompt(turn)
             parts: list[str] = []
             gen_result = None
-            async for ev in LLMService.get().generate_stream_events(system, user):
-                if isinstance(ev, str):
-                    parts.append(ev)
-                    yield event("token", ev)
-                else:
-                    gen_result = ev
+            # The slot is held only for the generation itself; retrieval,
+            # refusal, and cache lookups above must not consume a slot. Releasing
+            # on generator close (client Stop / disconnect) is why this is a
+            # context manager.
+            async with CapacityService.generation_slot():
+                async for ev in LLMService.get().generate_stream_events(system, user):
+                    if isinstance(ev, str):
+                        parts.append(ev)
+                        yield event("token", ev)
+                    else:
+                        gen_result = ev
 
             gen_ms = int(gen_result.duration_s * 1000) if gen_result else 0
             model_label = gen_result.label if gen_result else settings.LLM_MODEL
@@ -288,10 +358,15 @@ class ChatService:
                     },
                 )
 
-            message_id = await self.persist_turn(
-                turn, "".join(parts), model_label, gen_ms
-            )
+            answer = "".join(parts)
+            message_id = await self.persist_turn(turn, answer, model_label, gen_ms)
             yield event("done", {"message_id": message_id})
+            if gen_result:
+                await self._demo_cache_store(session_id, query, answer, turn, model_label)
+        except CapacityExhaustedError:
+            # Not a failure: the app is fine, the day's free-tier quota is spent.
+            logger.info("Capacity exhausted while streaming")
+            yield event("capacity", CAPACITY_MESSAGE)
         except Exception:
             logger.exception("Stream failure")
             yield event("error", STREAM_ERROR_MESSAGE)

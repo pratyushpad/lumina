@@ -89,6 +89,8 @@ export interface StreamMeta {
   completion_tokens: number;
   tokens_estimated: boolean;
   generation_time_ms: number;
+  /** True when the answer was replayed from the demo cache (zero provider cost). */
+  cached?: boolean;
 }
 
 export interface Message {

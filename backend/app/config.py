@@ -51,10 +51,35 @@ class Settings(BaseSettings):
     LOCAL_LLM_API_KEY: str = ""
     LOCAL_LLM_MODEL: str = "qwen2.5:7b-instruct-q4_K_M"
     LOCAL_LLM_TIMEOUT_S: float = 120.0
-    # slowapi rate limits (per IP)
+    # slowapi rate limits (per client key: owner token if present, else IP)
     RATE_LIMIT_CHAT: str = "20/minute"
     RATE_LIMIT_UPLOAD: str = "10/minute"
     RATE_LIMIT_DEFAULT: str = "60/minute"
+    # How many proxies sit in front of the app. X-Forwarded-For is client-
+    # appendable, so only the last N hops are trustworthy: the real client IP is
+    # the (N+1)-th entry counting from the right. HF Spaces adds exactly one hop;
+    # direct/local access has zero. Getting this wrong lets a client spoof its
+    # rate-limit key by sending its own XFF header.
+    TRUSTED_PROXY_HOPS: int = 0
+
+    # Daily free-tier budgets, counted in usage_daily and reset at 00:00 UTC.
+    # 0 = unlimited (a real local GPU has no quota). In production the "local"
+    # slot is Groq's free tier (metered by tokens) and "gemini" is Gemini's free
+    # tier (metered by requests); a provider over budget is skipped, and when
+    # every provider is exhausted the client sees a capacity banner, never a 503.
+    BUDGET_LOCAL_TOKENS_PER_DAY: int = 0
+    BUDGET_GEMINI_REQUESTS_PER_DAY: int = 0
+    # Concurrent LLM generations allowed at once. Free tiers rate-limit hard, so
+    # letting a burst open dozens of parallel streams just gets them all 429'd;
+    # serialising to a small number degrades to a short wait instead. 0 = no cap.
+    MAX_CONCURRENT_GENERATIONS: int = 4
+    # How long a request waits for a generation slot before giving up with a
+    # capacity signal rather than hanging.
+    GENERATION_ACQUIRE_TIMEOUT_S: float = 30.0
+    # Serve repeat demo questions from demo_answer_cache at zero token cost. The
+    # demo corpus and its suggested questions are fixed, so this is what makes
+    # "hundreds of demo prompts/day" true on a free tier.
+    DEMO_ANSWER_CACHE_ENABLED: bool = True
     # Seed the public demo session at startup (prod: baked demo_docs/ + persistent DB
     # make this a cheap no-op after the first boot).
     SEED_DEMO_ON_STARTUP: bool = False

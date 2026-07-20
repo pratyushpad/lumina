@@ -94,6 +94,8 @@ export interface StreamHandlers {
   onMeta?: (m: StreamMeta) => void;
   onDone: (messageId?: string) => void;
   onError: (e: string) => void;
+  /** Free-tier daily quota is spent — a calm capacity state, not a failure. */
+  onCapacity?: (message: string) => void;
 }
 
 /**
@@ -121,7 +123,12 @@ export function streamChat(sessionId: string, query: string, h: StreamHandlers):
     else if (payload.type === "token") h.onToken(payload.data || "");
     else if (payload.type === "meta") h.onMeta?.(payload.data);
     else if (payload.type === "refusal") h.onToken(payload.data || "");
-    else if (payload.type === "done") {
+    else if (payload.type === "capacity") {
+      // The server ends the stream after this; treat it as a terminal, non-error
+      // outcome so the UI shows a banner rather than a red toast.
+      (h.onCapacity ?? ((m) => h.onError(m)))(payload.data || "");
+      finish();
+    } else if (payload.type === "done") {
       h.onDone(payload.data?.message_id);
       finish();
     } else if (payload.type === "error") {
