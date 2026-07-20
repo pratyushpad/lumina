@@ -8,7 +8,7 @@ interface SessionStore {
   setActiveSession: (id: string | null) => void;
   addSession: (s: Session) => void;
   removeSession: (id: string) => void;
-  updateSession: (s: Session) => void;
+  updateSession: (id: string, patch: Partial<Session>) => void;
 }
 
 export const useSessionStore = create<SessionStore>((set) => ({
@@ -22,6 +22,6 @@ export const useSessionStore = create<SessionStore>((set) => ({
       sessions: st.sessions.filter((x) => x.id !== id),
       activeSessionId: st.activeSessionId === id ? null : st.activeSessionId,
     })),
-  updateSession: (s) =>
-    set((st) => ({ sessions: st.sessions.map((x) => (x.id === s.id ? s : x)) })),
+  updateSession: (id, patch) =>
+    set((st) => ({ sessions: st.sessions.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
 }));

@@ -8,6 +8,7 @@ import { useDocumentStatusPolling } from "@/hooks/useDocumentStatus";
 import { api } from "@/lib/api";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useSessionStore } from "@/stores/sessionStore";
+import { toast } from "@/stores/toastStore";
 
 const DEMO_SESSION_ID = "demo";
 
@@ -42,14 +43,32 @@ export default function AppPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    api.listSessions().then((r) => {
-      setSessions(r.sessions);
-      const requested = searchParams.get("session");
-      if (requested && r.sessions.some((s) => s.id === requested)) {
-        setActiveSession(requested);
+    api
+      .listSessions()
+      .then((r) => {
+        setSessions(r.sessions);
+        const requested = searchParams.get("session");
+        if (!requested) return;
+        if (r.sessions.some((s) => s.id === requested)) {
+          setActiveSession(requested);
+        } else {
+          // Landing links straight to ?session=demo; if seeding has not run the
+          // user would otherwise get a blank pane with no explanation.
+          toast.error(
+            "That session isn't available",
+            requested === "demo"
+              ? "The demo is still being prepared on the server. Try again shortly, or upload your own document."
+              : "It may have been deleted.",
+          );
+        }
         setSearchParams({}, { replace: true });
-      }
-    });
+      })
+      .catch(() =>
+        toast.error(
+          "Could not reach the server",
+          "The free-tier API may be waking up. Give it up to a minute and refresh.",
+        ),
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setSessions]);
 

@@ -4,6 +4,7 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { Toaster } from "@/components/ui/Toaster";
 import AppPage from "./pages/AppPage";
 import LandingPage from "./pages/LandingPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
   return (
@@ -12,6 +13,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app" element={<AppPage />} />
+        {/* vercel.json rewrites every path to index.html, so unknown URLs reach
+            the router rather than a server 404 — they need a page here. */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster />
     </ErrorBoundary>

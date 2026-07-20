@@ -14,6 +14,7 @@ interface Props {
   meta?: StreamMeta | null;
   modelUsed?: string | null;
   messageId?: string | null;
+  stopped?: boolean;
 }
 
 function ProviderBadge({
@@ -47,10 +48,12 @@ export function StreamingMessage({
   meta,
   modelUsed,
   messageId,
+  stopped,
 }: Props) {
   const [showTrace, setShowTrace] = useState(false);
-  // Only DB-persisted messages (uuid ids) have traces — not tmp-/err- placeholders
-  const traceable = !!messageId && !/^(tmp|err)-/.test(messageId);
+  // Only DB-persisted messages (uuid ids) have traces — not the tmp-/err-/
+  // stopped- placeholders the client creates locally.
+  const traceable = !!messageId && !/^(tmp|err|stopped)-/.test(messageId);
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
@@ -64,6 +67,11 @@ export function StreamingMessage({
           <span className="ml-0.5 inline-block h-3.5 w-2 bg-accent align-middle animate-pulse" />
         )}
       </div>
+      {stopped && (
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-tight2 text-textMuted">
+          Stopped · not saved
+        </p>
+      )}
       {citations && citations.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
           {citations.map((c) => (

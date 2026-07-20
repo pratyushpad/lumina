@@ -12,6 +12,7 @@ import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import PurePath
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -49,6 +50,18 @@ class Turn:
     citations: list[Citation] = field(default_factory=list)
 
 
+def image_url_for(image_path: str | None) -> str | None:
+    """Map a stored image to its served URL.
+
+    `image_path` is an absolute path on the server's disk; sending that to
+    clients leaks the deployment layout and is not fetchable anyway. The files
+    are served from the /static/images mount (see main.py), so expose only that.
+    """
+    if not image_path:
+        return None
+    return f"/static/images/{PurePath(image_path).name}"
+
+
 def to_citation(r: RetrievalResult) -> Citation:
     return Citation(
         chunk_id=r.chunk_id,
@@ -58,7 +71,7 @@ def to_citation(r: RetrievalResult) -> Citation:
         chunk_text=r.text[:1000],
         relevance_score=r.relevance_score,
         has_image=r.has_associated_image,
-        image_path=r.image_path,
+        image_path=image_url_for(r.image_path),
     )
 
 

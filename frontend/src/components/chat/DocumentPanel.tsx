@@ -3,6 +3,7 @@ import { FileText, Image as ImageIcon, X } from "lucide-react";
 import { DocumentDropzone } from "@/components/upload/DocumentDropzone";
 import { api } from "@/lib/api";
 import { useDocumentStore } from "@/stores/documentStore";
+import { toast } from "@/stores/toastStore";
 import type { Document } from "@/types";
 
 function StatusBadge({ status }: { status: Document["status"] }) {
@@ -30,9 +31,14 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
   const docs = useDocumentStore((s) => s.documents[sessionId] || []);
   const removeDocument = useDocumentStore((s) => s.removeDocument);
 
-  const handleDelete = async (id: string) => {
-    await api.deleteDocument(id);
-    removeDocument(sessionId, id);
+  const handleDelete = async (id: string, filename: string) => {
+    if (!confirm(`Remove "${filename}" from this session?`)) return;
+    try {
+      await api.deleteDocument(id);
+      removeDocument(sessionId, id);
+    } catch {
+      toast.error("Could not remove document", "It may already be gone. Refresh and try again.");
+    }
   };
 
   return (
@@ -57,7 +63,7 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
             </span>
             <StatusBadge status={d.status} />
             <button
-              onClick={() => handleDelete(d.id)}
+              onClick={() => handleDelete(d.id, d.filename)}
               className="ml-1 opacity-0 group-hover:opacity-100 text-textMuted hover:text-textPrimary transition-opacity"
             >
               <X size={13} />

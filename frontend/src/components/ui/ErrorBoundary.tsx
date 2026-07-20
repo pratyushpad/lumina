@@ -37,9 +37,16 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           <pre className="mt-4 max-h-32 overflow-auto hairline bg-card p-3 text-left text-[10px] font-mono text-textMuted">
             {this.state.error.stack?.split("\n").slice(0, 6).join("\n")}
           </pre>
-          <GradientButton className="mt-6" onClick={this.reset}>
-            <RotateCcw size={13} /> Try again
-          </GradientButton>
+          {/* "Try again" only clears the error state, which re-crashes if the
+              cause is deterministic — so offer a full reload as the way out. */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <GradientButton onClick={this.reset}>
+              <RotateCcw size={13} /> Try again
+            </GradientButton>
+            <GradientButton variant="outline" onClick={() => window.location.reload()}>
+              Reload page
+            </GradientButton>
+          </div>
         </div>
       </div>
     );

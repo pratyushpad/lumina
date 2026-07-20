@@ -99,4 +99,6 @@ export interface Message {
   model_used?: string | null;
   meta?: StreamMeta | null;
   created_at: string;
+  /** Client-only: generation was cancelled, so this turn was never persisted. */
+  stopped?: boolean;
 }

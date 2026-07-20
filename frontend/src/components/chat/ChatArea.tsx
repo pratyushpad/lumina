@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { StreamingMessage } from "./StreamingMessage";
 import { api, streamChat } from "@/lib/api";
+import { springPress } from "@/lib/motion";
 import { useChatStore } from "@/stores/chatStore";
 import { toast } from "@/stores/toastStore";
 import type { Message } from "@/types";
@@ -105,6 +106,31 @@ export function ChatArea({
     });
   };
 
+  /**
+   * Abort an in-flight generation. The partial answer is kept so the user can
+   * read what arrived, but the server cancels its generator on disconnect and
+   * never persists a stopped turn — so it is marked, and will not reappear on
+   * reload.
+   */
+  const stop = () => {
+    if (!isStreaming) return;
+    const partial = useChatStore.getState().streamingContent;
+    const citations = useChatStore.getState().streamingCitations;
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    if (partial.trim()) {
+      addMessage(sessionId, {
+        id: `stopped-${Date.now()}`,
+        role: "assistant",
+        content: partial,
+        citations,
+        stopped: true,
+        created_at: new Date().toISOString(),
+      });
+    }
+    clearStream();
+  };
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-6 py-10">
@@ -163,6 +189,7 @@ export function ChatArea({
                 meta={m.meta}
                 modelUsed={m.model_used}
                 messageId={m.id}
+                stopped={m.stopped}
               />
             ),
           )}
@@ -183,6 +210,9 @@ export function ChatArea({
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   send();
+                } else if (e.key === "Escape" && isStreaming) {
+                  e.preventDefault();
+                  stop();
                 }
               }}
               placeholder="Ask your documents…"
@@ -190,16 +220,31 @@ export function ChatArea({
               style={{ maxHeight: `${MAX_TEXTAREA_PX}px` }}
               className="flex-1 resize-none overflow-y-auto hairline bg-card px-4 py-3 text-sm outline-none focus:border-textPrimary/30 transition-colors placeholder:text-textMuted"
             />
-            <button
-              onClick={() => send()}
-              disabled={isStreaming || !input.trim()}
-              className="hairline-strong bg-textPrimary text-background p-3 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-textPrimary/90 transition-colors"
-            >
-              <ArrowUp size={16} strokeWidth={2.5} />
-            </button>
+            {isStreaming ? (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                transition={springPress}
+                onClick={stop}
+                aria-label="Stop generating"
+                className="hairline-strong bg-card text-textPrimary p-3 hover:border-textPrimary/40 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                <Square size={16} strokeWidth={2.5} fill="currentColor" />
+              </motion.button>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                transition={springPress}
+                onClick={() => send()}
+                disabled={!input.trim()}
+                aria-label="Send message"
+                className="hairline-strong bg-textPrimary text-background p-3 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-textPrimary/90 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                <ArrowUp size={16} strokeWidth={2.5} />
+              </motion.button>
+            )}
           </div>
           <div className="flex items-center justify-between text-[10px] uppercase tracking-tight2 text-textMuted font-mono">
-            <span>↵ send · ⇧↵ newline</span>
+            <span>{isStreaming ? "esc stop" : "↵ send · ⇧↵ newline"}</span>
             {model && (
               <span className="inline-flex items-center gap-1.5 hairline bg-card px-2 py-1">
                 <span className="h-1.5 w-1.5 bg-accent animate-pulse" />

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Ink ground reads on both light and dark browser chrome -->
+  <rect width="32" height="32" fill="#201E19"/>
+  <!-- "L" mark, matching the LUMINA wordmark -->
+  <path d="M9 7h4.2v14.2H23V25H9V7z" fill="#F6F4EE"/>
+  <!-- The accent period from the logotype -->
+  <rect x="24.6" y="21.2" width="3.6" height="3.8" fill="#1D4ED8"/>
+</svg>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "@/lib/api";
 import type { Trace, TraceStage } from "@/types";
 
@@ -84,9 +85,19 @@ export function TraceInspector({ messageId, onClose }: { messageId: string; onCl
       .catch(() => setError("No trace recorded for this message."));
   }, [messageId]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const maxMs = trace ? Math.max(...trace.stages.map((s) => s.latency_ms), 1) : 1;
 
-  return (
+  // Rendered into document.body: this panel is `position: fixed`, but it is
+  // mounted inside a message bubble that Framer animates with a transform, and
+  // a transformed ancestor becomes the containing block for fixed descendants —
+  // which would pin the overlay to the bubble instead of the viewport.
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -132,6 +143,7 @@ export function TraceInspector({ messageId, onClose }: { messageId: string; onCl
           )}
         </motion.aside>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
