@@ -11,6 +11,7 @@ from pathlib import Path
 from sqlalchemy import delete
 
 from app.config import settings
+from app.constants import DEMO_SESSION_ID, DEMO_SESSION_NAME
 from app.database import AsyncSessionLocal
 from app.models import Document, Message
 from app.services.ingestion.corpus import doc_id_for, ingest
@@ -18,8 +19,9 @@ from app.services.ingestion.corpus import doc_id_for, ingest
 logger = logging.getLogger("lumina.seed_demo")
 
 DEMO_DOCS_DIR = Path(__file__).resolve().parents[2] / "demo_docs"
-DEMO_SESSION_ID = "demo"
-DEMO_SESSION_NAME = "Demo — ask these papers anything"
+
+__all__ = ["DEMO_DOCS_DIR", "DEMO_SESSION_ID", "DEMO_SESSION_NAME", "clear_demo_history",
+           "demo_already_seeded", "seed_demo"]
 
 
 async def demo_already_seeded() -> bool:

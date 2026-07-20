@@ -6,11 +6,10 @@ import { ChatArea } from "@/components/chat/ChatArea";
 import { DocumentPanel } from "@/components/chat/DocumentPanel";
 import { useDocumentStatusPolling } from "@/hooks/useDocumentStatus";
 import { api } from "@/lib/api";
+import { DEMO_SESSION_ID } from "@/lib/constants";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { toast } from "@/stores/toastStore";
-
-const DEMO_SESSION_ID = "demo";
 
 const DEMO_SUGGESTIONS = [
   {

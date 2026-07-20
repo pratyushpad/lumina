@@ -62,8 +62,9 @@ def patched(monkeypatch):
     llm = _FakeLLM()
     turn = _turn()
 
-    async def fake_retrieve(self, query, session_id, document_ids):
+    async def fake_retrieve(self, query, session_id, document_ids, owner_token=None):
         turn.query = query
+        turn.owner_token = owner_token
         return turn
 
     async def fake_persist(self, turn, answer, model_used, gen_ms, citations=None):

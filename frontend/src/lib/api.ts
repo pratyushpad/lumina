@@ -10,12 +10,18 @@ import type {
   Trace,
 } from "@/types";
 
+import { ownerHeaders } from "./owner";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
     ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...ownerHeaders(),
+      ...(init?.headers || {}),
+    },
   });
   if (!res.ok) {
     const text = await res.text();
@@ -40,7 +46,13 @@ export const api = {
     const fd = new FormData();
     fd.append("session_id", sessionId);
     fd.append("file", file);
-    const res = await fetch(`${BASE_URL}/api/documents/upload`, { method: "POST", body: fd });
+    // No Content-Type here on purpose: the browser sets it with the multipart
+    // boundary, and overriding it makes the body unparseable server-side.
+    const res = await fetch(`${BASE_URL}/api/documents/upload`, {
+      method: "POST",
+      body: fd,
+      headers: ownerHeaders(),
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -121,7 +133,7 @@ export function streamChat(sessionId: string, query: string, h: StreamHandlers):
   (async () => {
     try {
       const res = await fetch(url, {
-        headers: { Accept: "text/event-stream" },
+        headers: { Accept: "text/event-stream", ...ownerHeaders() },
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {

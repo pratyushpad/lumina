@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { Check, Lock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { isDemoSession } from "@/lib/constants";
 import { useSessionStore } from "@/stores/sessionStore";
 import { toast } from "@/stores/toastStore";
 import type { Session } from "@/types";
@@ -59,7 +60,8 @@ export function SessionList() {
     <div className="flex flex-col">
       {sessions.map((s) => {
         const active = s.id === activeId;
-        const editing = editingId === s.id;
+        const readOnly = isDemoSession(s.id);
+        const editing = editingId === s.id && !readOnly;
         return (
           <motion.div
             key={s.id}
@@ -109,6 +111,16 @@ export function SessionList() {
                 >
                   <Check size={13} />
                 </button>
+              ) : readOnly ? (
+                // The demo is shared: renaming or deleting it would change what
+                // every other visitor sees, so those affordances are not shown.
+                <span
+                  title="Shared demo — read-only"
+                  className="ml-auto shrink-0 text-textMuted"
+                  aria-hidden="true"
+                >
+                  <Lock size={11} />
+                </span>
               ) : (
                 <span className="ml-auto flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                   <button
@@ -130,6 +142,7 @@ export function SessionList() {
             </div>
             <div className="mt-1 text-[10px] uppercase tracking-tight2 text-textMuted font-mono">
               {s.document_count} docs · {s.message_count} msgs
+              {readOnly && " · shared"}
             </div>
           </motion.div>
         );

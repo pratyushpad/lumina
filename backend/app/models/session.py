@@ -12,6 +12,9 @@ class Session(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False, default="New Session")
+    # Opaque per-browser token. NULL means no owner: either a pre-ownership row
+    # or the shared demo, neither of which is reachable by token match.
+    owner_token = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

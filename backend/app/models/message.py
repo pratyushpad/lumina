@@ -15,6 +15,9 @@ class Message(Base):
     session_id = Column(
         String, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    # Who asked. Only load-bearing for the shared demo session, where several
+    # visitors write into one session and must not read each other's turns.
+    owner_token = Column(String, nullable=True, index=True)
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     citations = Column(JSONB, nullable=True)

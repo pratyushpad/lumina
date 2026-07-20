@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { FileText, Image as ImageIcon, X } from "lucide-react";
+import { FileText, Image as ImageIcon, Lock, X } from "lucide-react";
 import { DocumentDropzone } from "@/components/upload/DocumentDropzone";
 import { api } from "@/lib/api";
+import { isDemoSession } from "@/lib/constants";
 import { useDocumentStore } from "@/stores/documentStore";
 import { toast } from "@/stores/toastStore";
 import type { Document } from "@/types";
@@ -30,6 +31,7 @@ function StatusBadge({ status }: { status: Document["status"] }) {
 export function DocumentPanel({ sessionId }: { sessionId: string }) {
   const docs = useDocumentStore((s) => s.documents[sessionId] || []);
   const removeDocument = useDocumentStore((s) => s.removeDocument);
+  const readOnly = isDemoSession(sessionId);
 
   const handleDelete = async (id: string, filename: string) => {
     if (!confirm(`Remove "${filename}" from this session?`)) return;
@@ -44,7 +46,14 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
   return (
     <div className="border-b border-line bg-background px-6 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        <DocumentDropzone sessionId={sessionId} />
+        {readOnly ? (
+          <span className="inline-flex items-center gap-1.5 hairline bg-card px-3 py-2 text-[10px] font-mono uppercase tracking-tight2 text-textMuted">
+            <Lock size={11} />
+            Shared library — ask anything, uploads go in your own session
+          </span>
+        ) : (
+          <DocumentDropzone sessionId={sessionId} />
+        )}
         {docs.map((d) => (
           <motion.div
             key={d.id}
@@ -62,12 +71,15 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
               {d.num_chunks} chunks
             </span>
             <StatusBadge status={d.status} />
-            <button
-              onClick={() => handleDelete(d.id, d.filename)}
-              className="ml-1 opacity-0 group-hover:opacity-100 text-textMuted hover:text-textPrimary transition-opacity"
-            >
-              <X size={13} />
-            </button>
+            {!readOnly && (
+              <button
+                onClick={() => handleDelete(d.id, d.filename)}
+                aria-label={`Remove ${d.filename}`}
+                className="ml-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 text-textMuted hover:text-textPrimary"
+              >
+                <X size={13} />
+              </button>
+            )}
           </motion.div>
         ))}
       </div>

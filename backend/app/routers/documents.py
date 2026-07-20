@@ -18,8 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import AsyncSessionLocal, get_db
+from app.deps.owner import OwnerToken, load_session
 from app.middleware.rate_limit import limiter
-from app.models import Document, Session
+from app.models import Document
 from app.schemas.document import (
     DocumentDeleteResponse,
     DocumentListItem,
@@ -93,13 +94,14 @@ async def _process_document_bg(
 async def upload_document(
     request: Request,
     background: BackgroundTasks,
+    token: OwnerToken,
     session_id: str = Form(...),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    sess = await db.get(Session, session_id)
-    if not sess:
-        raise HTTPException(404, "Session not found")
+    # Uploading changes what the session can answer from, so it is a write —
+    # which is what keeps visitors from adding documents to the shared demo.
+    await load_session(db, session_id, token, write=True)
 
     ext = get_file_extension(file.filename or "")
     if ext not in settings.ALLOWED_EXTENSIONS:
@@ -144,18 +146,32 @@ async def upload_document(
 
 
 @router.get("/session/{session_id}", response_model=list[DocumentListItem])
-async def list_documents(session_id: str, db: AsyncSession = Depends(get_db)):
+async def list_documents(
+    session_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+):
+    await load_session(db, session_id, token, write=False)
     res = await db.execute(
         select(Document).where(Document.session_id == session_id).order_by(Document.uploaded_at.desc())
     )
     return list(res.scalars().all())
 
 
-@router.get("/{document_id}/status", response_model=DocumentStatusResponse)
-async def get_status(document_id: str, db: AsyncSession = Depends(get_db)):
+async def _load_document(
+    db: AsyncSession, document_id: str, token: str | None, *, write: bool
+) -> Document:
+    """A document is reachable exactly when its session is."""
     doc = await db.get(Document, document_id)
     if not doc:
         raise HTTPException(404, "Document not found")
+    await load_session(db, doc.session_id, token, write=write)
+    return doc
+
+
+@router.get("/{document_id}/status", response_model=DocumentStatusResponse)
+async def get_status(
+    document_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+):
+    doc = await _load_document(db, document_id, token, write=False)
     return DocumentStatusResponse(
         document_id=doc.id,
         status=doc.status,
@@ -165,10 +181,10 @@ async def get_status(document_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
-async def delete_document(document_id: str, db: AsyncSession = Depends(get_db)):
-    doc = await db.get(Document, document_id)
-    if not doc:
-        raise HTTPException(404, "Document not found")
+async def delete_document(
+    document_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+):
+    doc = await _load_document(db, document_id, token, write=True)
     chunks_deleted = await PgVectorStore.get().delete_by_document_id(document_id)
     BM25Index.get().invalidate(document_id)
     cleanup_document_files(doc.stored_path, doc.id, settings.PROCESSED_DIR)

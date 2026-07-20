@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import AsyncSessionLocal
+from app.deps.owner import load_session
 from app.models import Document, Message, Session
 from app.schemas.chat import Citation
 from app.services.generation.llm import LLMService
@@ -47,6 +48,7 @@ class Turn:
     tracer: Tracer
     chunks: list[RetrievalResult]
     retrieval_ms: int
+    owner_token: str | None = None
     citations: list[Citation] = field(default_factory=list)
 
 
@@ -84,17 +86,28 @@ class ChatService:
         )
         return [row[0] for row in res.all()]
 
-    async def resolve_documents(self, db: AsyncSession, session_id: str) -> list[str]:
-        """Validate the session has ingested documents, or raise the API error."""
-        sess = await db.get(Session, session_id)
-        if not sess:
-            raise HTTPException(404, "Session not found")
+    async def resolve_documents(
+        self, db: AsyncSession, session_id: str, token: str | None = None
+    ) -> list[str]:
+        """Check access, then validate the session has ingested documents.
+
+        Chatting counts as a read: the demo corpus is shared, and the turn is
+        written back tagged with the caller's token rather than mutating
+        anything anyone else can see.
+        """
+        await load_session(db, session_id, token, write=False)
         document_ids = await self.document_ids_for_session(db, session_id)
         if not document_ids:
             raise HTTPException(400, "No ready documents in this session")
         return document_ids
 
-    async def retrieve(self, query: str, session_id: str, document_ids: list[str]) -> Turn:
+    async def retrieve(
+        self,
+        query: str,
+        session_id: str,
+        document_ids: list[str],
+        owner_token: str | None = None,
+    ) -> Turn:
         tracer = Tracer(query, session_id=session_id)
         t0 = time.time()
         results = await RetrievalPipeline().run(query, document_ids, tracer=tracer)
@@ -112,6 +125,7 @@ class ChatService:
             tracer=tracer,
             chunks=results,
             retrieval_ms=int((time.time() - t0) * 1000),
+            owner_token=owner_token,
         )
         turn.citations = [to_citation(c) for c in results]
         return turn
@@ -152,6 +166,7 @@ class ChatService:
             sess = await db.get(Session, turn.session_id)
             asst_msg = Message(
                 session_id=turn.session_id,
+                owner_token=turn.owner_token,
                 role="assistant",
                 content=answer,
                 citations=[c.model_dump() for c in cites],
@@ -161,7 +176,12 @@ class ChatService:
             )
             db.add_all(
                 [
-                    Message(session_id=turn.session_id, role="user", content=turn.query),
+                    Message(
+                        session_id=turn.session_id,
+                        owner_token=turn.owner_token,
+                        role="user",
+                        content=turn.query,
+                    ),
                     asst_msg,
                 ]
             )
@@ -186,10 +206,16 @@ class ChatService:
         )
         turn.tracer.set_generation(result.provider, result.model, result.tokens_per_sec)
 
-    async def answer(self, query: str, session_id: str, document_ids: list[str]):
+    async def answer(
+        self,
+        query: str,
+        session_id: str,
+        document_ids: list[str],
+        owner_token: str | None = None,
+    ):
         """Blocking turn. Returns (message_id, content, citations, retrieval_ms,
         gen_ms, model_used) for the router to shape into a ChatResponse."""
-        turn = await self.retrieve(query, session_id, document_ids)
+        turn = await self.retrieve(query, session_id, document_ids, owner_token)
 
         if self.should_refuse(turn):
             message_id = await self.persist_turn(
@@ -212,7 +238,11 @@ class ChatService:
         )
 
     async def stream(
-        self, query: str, session_id: str, document_ids: list[str]
+        self,
+        query: str,
+        session_id: str,
+        document_ids: list[str],
+        owner_token: str | None = None,
     ) -> AsyncIterator[dict]:
         """Streaming turn, yielding SSE payloads (citations/token/meta/refusal/done)."""
 
@@ -220,7 +250,7 @@ class ChatService:
             return {"data": json.dumps({"type": kind, "data": data})}
 
         try:
-            turn = await self.retrieve(query, session_id, document_ids)
+            turn = await self.retrieve(query, session_id, document_ids, owner_token)
 
             if self.should_refuse(turn):
                 yield event("refusal", REFUSAL_MESSAGE)
