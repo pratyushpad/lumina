@@ -1,4 +1,5 @@
 import type {
+  AuthUser,
   Citation,
   Document,
   DocumentStatusResponse,
@@ -10,16 +11,24 @@ import type {
   Trace,
 } from "@/types";
 
+import { authHeaders } from "./auth";
 import { ownerHeaders } from "./owner";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+/** Identity headers sent on every call: the browser token, plus a Bearer JWT
+ * when signed in. Both are present for signed-in users so the server can adopt
+ * this browser's anonymous sessions on `claim`. */
+function identityHeaders(): Record<string, string> {
+  return { ...ownerHeaders(), ...authHeaders() };
+}
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...ownerHeaders(),
+      ...identityHeaders(),
       ...(init?.headers || {}),
     },
   });
@@ -51,7 +60,7 @@ export const api = {
     const res = await fetch(`${BASE_URL}/api/documents/upload`, {
       method: "POST",
       body: fd,
-      headers: ownerHeaders(),
+      headers: identityHeaders(),
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
@@ -68,14 +77,26 @@ export const api = {
   // traces
   getTrace: (messageId: string) => http<Trace>(`/api/traces/${messageId}`),
 
-  // config (model name, limits)
+  // config (model name, limits, sign-in availability)
   getConfig: () =>
     http<{
       model: string;
       max_file_size_mb: number;
       allowed_extensions: string[];
       top_k_reranked: number;
+      auth_enabled: boolean;
+      google_client_id: string;
+      oauth_redirect_uri: string;
     }>("/api/config"),
+
+  // auth
+  exchangeCode: (code: string) =>
+    http<{ token: string; user: AuthUser }>("/api/auth/google/exchange", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+  me: () => http<AuthUser>("/api/auth/me"),
+  claim: () => http<{ claimed: number }>("/api/auth/claim", { method: "POST" }),
 };
 
 /**
@@ -140,7 +161,7 @@ export function streamChat(sessionId: string, query: string, h: StreamHandlers):
   (async () => {
     try {
       const res = await fetch(url, {
-        headers: { Accept: "text/event-stream", ...ownerHeaders() },
+        headers: { Accept: "text/event-stream", ...identityHeaders() },
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {

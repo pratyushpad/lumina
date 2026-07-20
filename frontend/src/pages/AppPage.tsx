@@ -7,6 +7,7 @@ import { DocumentPanel } from "@/components/chat/DocumentPanel";
 import { useDocumentStatusPolling } from "@/hooks/useDocumentStatus";
 import { api } from "@/lib/api";
 import { DEMO_SESSION_ID } from "@/lib/constants";
+import { useAuthStore } from "@/stores/authStore";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { toast } from "@/stores/toastStore";
@@ -39,7 +40,13 @@ export default function AppPage() {
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const setActiveSession = useSessionStore((s) => s.setActiveSession);
   const setDocuments = useDocumentStore((s) => s.setDocuments);
+  const hydrateAuth = useAuthStore((s) => s.hydrate);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Turn a stored session token into a signed-in user (or drop it if stale).
+  useEffect(() => {
+    hydrateAuth();
+  }, [hydrateAuth]);
 
   useEffect(() => {
     api

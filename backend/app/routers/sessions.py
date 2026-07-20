@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.constants import DEMO_SESSION_ID
 from app.database import get_db
-from app.deps.owner import OwnerToken, load_session
+from app.deps.identity import IdentityDep
+from app.deps.owner import load_session
 from app.models import Document, Message, Session
 from app.schemas.session import (
     SessionCreate,
@@ -46,55 +47,56 @@ async def _to_response(
 
 @router.post("/", response_model=SessionResponse)
 async def create_session(
-    body: SessionCreate, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    body: SessionCreate, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
-    s = Session(name=body.name or "New Session", owner_token=token)
+    s = Session(name=body.name or "New Session", owner_token=identity.owner_key)
     db.add(s)
     await db.commit()
     await db.refresh(s)
-    return await _to_response(db, s, token)
+    return await _to_response(db, s, identity.owner_key)
 
 
 @router.get("/", response_model=SessionListResponse)
-async def list_sessions(token: OwnerToken, db: AsyncSession = Depends(get_db)):
-    # Yours plus the shared demo. A caller with no token sees only the demo.
+async def list_sessions(identity: IdentityDep, db: AsyncSession = Depends(get_db)):
+    # Yours plus the shared demo. A caller with no identity sees only the demo.
+    key = identity.owner_key
     visible = Session.id == DEMO_SESSION_ID
-    if token:
-        visible = or_(visible, Session.owner_token == token)
+    if key:
+        visible = or_(visible, Session.owner_token == key)
     res = await db.execute(
         select(Session).where(visible).order_by(Session.updated_at.desc())
     )
-    items = [await _to_response(db, s, token) for s in res.scalars().all()]
+    items = [await _to_response(db, s, key) for s in res.scalars().all()]
     return SessionListResponse(sessions=items, total=len(items))
 
 
 @router.get("/{session_id}", response_model=SessionResponse)
 async def get_session(
-    session_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    session_id: str, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
-    s = await load_session(db, session_id, token, write=False)
-    return await _to_response(db, s, token)
+    s = await load_session(db, session_id, identity.owner_key, write=False)
+    return await _to_response(db, s, identity.owner_key)
 
 
 @router.patch("/{session_id}", response_model=SessionResponse)
 async def rename_session(
     session_id: str,
     body: SessionRename,
-    token: OwnerToken,
+    identity: IdentityDep,
     db: AsyncSession = Depends(get_db),
 ):
-    s = await load_session(db, session_id, token, write=True)
+    s = await load_session(db, session_id, identity.owner_key, write=True)
     s.name = body.name
     await db.commit()
     await db.refresh(s)
-    return await _to_response(db, s, token)
+    return await _to_response(db, s, identity.owner_key)
 
 
 @router.delete("/{session_id}")
 async def delete_session(
-    session_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    session_id: str, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
-    s = await load_session(db, session_id, token, write=True)
+    s = await load_session(db, session_id, identity.owner_key, write=True)
 
     # Cascade vectors + files
     docs_res = await db.execute(select(Document).where(Document.session_id == session_id))

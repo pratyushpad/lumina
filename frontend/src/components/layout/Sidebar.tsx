@@ -1,6 +1,7 @@
 import { Command, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { AuthPanel } from "@/components/layout/AuthPanel";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { SessionList } from "@/components/sessions/SessionList";
 import { api } from "@/lib/api";
@@ -59,6 +60,7 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto py-2">
         <SessionList />
       </div>
+      <AuthPanel />
       <div className="border-t border-line px-4 py-3 text-[10px] uppercase tracking-tight2 font-mono text-textMuted flex items-center justify-between">
         <span>Quick switch</span>
         <kbd className="hairline bg-card px-1.5 py-0.5 inline-flex items-center gap-0.5">

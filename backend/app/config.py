@@ -84,6 +84,25 @@ class Settings(BaseSettings):
     # make this a cheap no-op after the first boot).
     SEED_DEMO_ON_STARTUP: bool = False
 
+    # Google sign-in (optional). Self-rolled OAuth authorization-code flow: the
+    # SPA sends the browser to Google, Google returns a code to the SPA callback,
+    # and the backend exchanges it (client secret stays server-side). Sign-in is
+    # hidden entirely unless all three are set — the app is fully usable signed
+    # out. JWT_SECRET signs our own 7-day session tokens; it must be a fixed,
+    # secret value in production (a random per-boot default would log everyone
+    # out on every restart).
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    # Where Google returns the browser — the SPA's callback route. Must exactly
+    # match an authorised redirect URI on the Google OAuth client.
+    OAUTH_REDIRECT_URI: str = "http://localhost:5173/auth/callback"
+    JWT_SECRET: str = ""
+    JWT_EXPIRE_DAYS: int = 7
+
+    @property
+    def auth_enabled(self) -> bool:
+        return bool(self.GOOGLE_CLIENT_ID and self.GOOGLE_CLIENT_SECRET and self.JWT_SECRET)
+
     # Comma-separated origins in env (e.g. "https://app.example.com,https://example.com").
     # Wildcards are rejected: allow_credentials=True + "*" would be an open CORS policy.
     CORS_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:5173"]

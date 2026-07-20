@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import DEMO_SESSION_ID
 from app.database import get_db
-from app.deps.owner import OwnerToken, load_session
+from app.deps.identity import IdentityDep
+from app.deps.owner import load_session
 from app.models import Message, Trace
 
 router = APIRouter(prefix="/api/traces", tags=["traces"])
@@ -36,15 +37,16 @@ def _to_dict(t: Trace) -> dict:
 
 @router.get("/{message_id}")
 async def get_trace(
-    message_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    message_id: str, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
     # A trace holds the question asked and the passages retrieved for it, so it
     # is as private as the message it explains — gate it on the same rules.
+    key = identity.owner_key
     msg = await db.get(Message, message_id)
     if not msg:
         raise HTTPException(404, "No trace for this message")
-    await load_session(db, msg.session_id, token, write=False)
-    if msg.session_id == DEMO_SESSION_ID and msg.owner_token != token:
+    await load_session(db, msg.session_id, key, write=False)
+    if msg.session_id == DEMO_SESSION_ID and msg.owner_token != key:
         raise HTTPException(404, "No trace for this message")
 
     res = await db.execute(select(Trace).where(Trace.message_id == message_id))

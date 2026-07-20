@@ -1,15 +1,14 @@
-"""Per-browser session ownership.
+"""Session ownership.
 
-There are no accounts yet, so "who are you" is answered by an opaque token the
-client generates once and stores locally, sent as `X-Owner-Token`. It is a
-capability, not an identity: holding it grants access to the sessions created
-with it, and nothing else. It is never used for anything the user has to trust
-us about, and it is deliberately not in the URL — query strings end up in proxy
-logs, browser history, and Referer headers.
+A session belongs to an `owner_key`: an anonymous browser's opaque token, or —
+for a signed-in user — "user:<id>" (see deps/identity.py). Both are opaque
+capabilities carried in a header, never in the URL (query strings end up in
+proxy logs, browser history, and Referer). This module only cares about the
+key; how it is derived is identity.py's job.
 
 Access rules:
 
-- A session with a matching owner_token is fully yours.
+- A session whose owner_token equals the caller's key is fully theirs.
 - The seeded demo session is readable by everyone and writable by no one.
 - Everything else 404s, including sessions that exist but belong to someone
   else. Answering 403 there would confirm the id is real, which turns a guess
@@ -17,7 +16,7 @@ Access rules:
 """
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import DEMO_SESSION_ID
@@ -49,10 +48,6 @@ def owner_token(
     if not (MIN_TOKEN_LEN <= len(token) <= MAX_TOKEN_LEN):
         return None
     return token
-
-
-OwnerToken = Annotated[str | None, Depends(owner_token)]
-
 
 def owns(session: Session, token: str | None) -> bool:
     """True if `token` owns `session`. Untokened callers own nothing, and a

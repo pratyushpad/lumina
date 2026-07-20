@@ -1,3 +1,10 @@
+export interface AuthUser {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface Session {
   id: string;
   name: string;

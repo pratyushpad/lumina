@@ -18,7 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import AsyncSessionLocal, get_db
-from app.deps.owner import OwnerToken, load_session
+from app.deps.identity import IdentityDep
+from app.deps.owner import load_session
 from app.middleware.rate_limit import limiter
 from app.models import Document
 from app.schemas.document import (
@@ -94,14 +95,14 @@ async def _process_document_bg(
 async def upload_document(
     request: Request,
     background: BackgroundTasks,
-    token: OwnerToken,
+    identity: IdentityDep,
     session_id: str = Form(...),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     # Uploading changes what the session can answer from, so it is a write —
     # which is what keeps visitors from adding documents to the shared demo.
-    await load_session(db, session_id, token, write=True)
+    await load_session(db, session_id, identity.owner_key, write=True)
 
     ext = get_file_extension(file.filename or "")
     if ext not in settings.ALLOWED_EXTENSIONS:
@@ -147,9 +148,9 @@ async def upload_document(
 
 @router.get("/session/{session_id}", response_model=list[DocumentListItem])
 async def list_documents(
-    session_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    session_id: str, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
-    await load_session(db, session_id, token, write=False)
+    await load_session(db, session_id, identity.owner_key, write=False)
     res = await db.execute(
         select(Document).where(Document.session_id == session_id).order_by(Document.uploaded_at.desc())
     )
@@ -169,9 +170,9 @@ async def _load_document(
 
 @router.get("/{document_id}/status", response_model=DocumentStatusResponse)
 async def get_status(
-    document_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    document_id: str, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
-    doc = await _load_document(db, document_id, token, write=False)
+    doc = await _load_document(db, document_id, identity.owner_key, write=False)
     return DocumentStatusResponse(
         document_id=doc.id,
         status=doc.status,
@@ -182,9 +183,9 @@ async def get_status(
 
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 async def delete_document(
-    document_id: str, token: OwnerToken, db: AsyncSession = Depends(get_db)
+    document_id: str, identity: IdentityDep, db: AsyncSession = Depends(get_db)
 ):
-    doc = await _load_document(db, document_id, token, write=True)
+    doc = await _load_document(db, document_id, identity.owner_key, write=True)
     chunks_deleted = await PgVectorStore.get().delete_by_document_id(document_id)
     BM25Index.get().invalidate(document_id)
     cleanup_document_files(doc.stored_path, doc.id, settings.PROCESSED_DIR)
