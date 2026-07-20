@@ -25,7 +25,7 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
       documents: {
         ...s.documents,
         [sessionId]: (s.documents[sessionId] || []).map((d) =>
-          d.id === docId ? { ...d, ...patch } : d
+          d.id === docId ? { ...d, ...patch } : d,
         ),
       },
     })),

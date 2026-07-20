@@ -35,7 +35,10 @@ export function ChatArea({
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    api.getConfig().then((c) => setModel(c.model)).catch(() => setModel(null));
+    api
+      .getConfig()
+      .then((c) => setModel(c.model))
+      .catch(() => setModel(null));
   }, []);
 
   useEffect(() => {
@@ -161,14 +164,10 @@ export function ChatArea({
                 modelUsed={m.model_used}
                 messageId={m.id}
               />
-            )
+            ),
           )}
           {isStreaming && (
-            <StreamingMessage
-              content={streamingContent}
-              citations={streamingCitations}
-              streaming
-            />
+            <StreamingMessage content={streamingContent} citations={streamingCitations} streaming />
           )}
           <div ref={bottomRef} />
         </div>

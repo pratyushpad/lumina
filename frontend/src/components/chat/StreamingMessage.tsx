@@ -16,7 +16,13 @@ interface Props {
   messageId?: string | null;
 }
 
-function ProviderBadge({ meta, modelUsed }: { meta?: StreamMeta | null; modelUsed?: string | null }) {
+function ProviderBadge({
+  meta,
+  modelUsed,
+}: {
+  meta?: StreamMeta | null;
+  modelUsed?: string | null;
+}) {
   const label = meta ? `${meta.provider}:${meta.model}` : modelUsed;
   if (!label) return null;
   const local = label.startsWith("local:");

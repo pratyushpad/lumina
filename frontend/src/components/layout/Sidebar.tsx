@@ -22,7 +22,7 @@ export function Sidebar() {
     } catch {
       toast.error(
         "Could not create session",
-        "The server may be waking up. Give it up to a minute and try again."
+        "The server may be waking up. Give it up to a minute and try again.",
       );
     } finally {
       setCreating(false);
@@ -31,10 +31,7 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-[280px] shrink-0 flex-col border-r border-line bg-background">
-      <Link
-        to="/"
-        className="block border-b border-line px-5 py-5 transition-colors hover:bg-card"
-      >
+      <Link to="/" className="block border-b border-line px-5 py-5 transition-colors hover:bg-card">
         <span className="font-display text-lg font-bold tracking-tight3">
           LUMINA<span className="text-accent">.</span>
         </span>
@@ -43,7 +40,11 @@ export function Sidebar() {
         </div>
       </Link>
       <div className="border-b border-line p-3">
-        <GradientButton onClick={newSession} disabled={creating} className="w-full disabled:opacity-60">
+        <GradientButton
+          onClick={newSession}
+          disabled={creating}
+          className="w-full disabled:opacity-60"
+        >
           {creating ? (
             <>
               <Loader2 size={14} className="animate-spin" /> Creating

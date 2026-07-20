@@ -18,11 +18,13 @@ const DEMO_SUGGESTIONS = [
   },
   {
     label: "How do residual connections help train very deep networks?",
-    query: "According to the ResNet paper, how do residual connections help train very deep networks?",
+    query:
+      "According to the ResNet paper, how do residual connections help train very deep networks?",
   },
   {
     label: "What BLEU score did the Transformer get on WMT14 En→De?",
-    query: "What BLEU score did the Transformer achieve on the WMT 2014 English-to-German translation task?",
+    query:
+      "What BLEU score did the Transformer achieve on the WMT 2014 English-to-German translation task?",
   },
   {
     label: "What's the capital of France? (off-topic — watch it refuse)",
@@ -74,7 +76,8 @@ export default function AppPage() {
                 01 / Begin
               </div>
               <h2 className="mt-3 font-display text-4xl font-bold tracking-tight3">
-                Select or create<br />a session.
+                Select or create
+                <br />a session.
               </h2>
               <p className="mt-4 text-sm text-textSecondary">
                 {sessions.length === 0

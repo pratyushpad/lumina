@@ -32,7 +32,8 @@ export const api = {
   getSession: (id: string) => http<Session>(`/api/sessions/${id}`),
   renameSession: (id: string, name: string) =>
     http<Session>(`/api/sessions/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
-  deleteSession: (id: string) => http<{ message: string }>(`/api/sessions/${id}`, { method: "DELETE" }),
+  deleteSession: (id: string) =>
+    http<{ message: string }>(`/api/sessions/${id}`, { method: "DELETE" }),
 
   // documents
   uploadDocument: async (sessionId: string, file: File): Promise<DocumentUploadResponse> => {
@@ -43,8 +44,7 @@ export const api = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
-  listDocuments: (sessionId: string) =>
-    http<Document[]>(`/api/documents/session/${sessionId}`),
+  listDocuments: (sessionId: string) => http<Document[]>(`/api/documents/session/${sessionId}`),
   getDocumentStatus: (documentId: string) =>
     http<DocumentStatusResponse>(`/api/documents/${documentId}/status`),
   deleteDocument: (documentId: string) =>

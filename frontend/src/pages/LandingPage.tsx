@@ -109,43 +109,44 @@ export default function LandingPage() {
         ref={heroRef}
         className="relative flex min-h-[88vh] items-center justify-center px-6 noise"
       >
-          <motion.div
-            style={{ y: heroY, opacity: heroOpacity }}
-            className="relative z-10 mx-auto w-full max-w-6xl"
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="relative z-10 mx-auto w-full max-w-6xl"
+        >
+          <h1 className="font-display text-[clamp(3rem,9vw,9rem)] font-bold leading-[0.92] tracking-tight3">
+            <SplitText text="Talk to your" />
+            <br />
+            <span className="text-accent">
+              <SplitText text="documents." stagger={0.07} />
+            </span>
+          </h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="mt-6 max-w-xl text-base text-textSecondary leading-relaxed"
           >
+            A grounded, multimodal RAG workbench. Upload PDFs, images, and text. Get cited answers
+            backed by your own context.
+          </motion.p>
 
-            <h1 className="font-display text-[clamp(3rem,9vw,9rem)] font-bold leading-[0.92] tracking-tight3">
-              <SplitText text="Talk to your" />
-              <br />
-              <span className="text-accent"><SplitText text="documents." stagger={0.07} /></span>
-            </h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              className="mt-6 max-w-xl text-base text-textSecondary leading-relaxed"
-            >
-              A grounded, multimodal RAG workbench. Upload PDFs, images, and text.
-              Get cited answers backed by your own context.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.65, duration: 0.6 }}
-              className="mt-10 flex flex-wrap items-center gap-3"
-            >
-              <Link to="/app?session=demo">
-                <GradientButton variant="primary">
-                  Try the live demo <ArrowRight size={14} />
-                </GradientButton>
-              </Link>
-              <Link to="/app">
-                <GradientButton variant="outline">Open Lumina</GradientButton>
-              </Link>
-            </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65, duration: 0.6 }}
+            className="mt-10 flex flex-wrap items-center gap-3"
+          >
+            <Link to="/app?session=demo">
+              <GradientButton variant="primary">
+                Try the live demo <ArrowRight size={14} />
+              </GradientButton>
+            </Link>
+            <Link to="/app">
+              <GradientButton variant="outline">Open Lumina</GradientButton>
+            </Link>
           </motion.div>
+        </motion.div>
       </section>
 
       <Marquee />
@@ -164,8 +165,8 @@ export default function LandingPage() {
                 <SplitText text="Built for grounded answers." inView />
               </h2>
               <p className="mt-4 max-w-xl text-sm text-textSecondary">
-                Three things matter in a RAG system: how it indexes, how it retrieves, and how
-                it cites. Lumina does each well.
+                Three things matter in a RAG system: how it indexes, how it retrieves, and how it
+                cites. Lumina does each well.
               </p>
             </div>
           </motion.div>
@@ -182,9 +183,7 @@ export default function LandingPage() {
                 className={`p-8 ${i === 0 ? "md:col-span-6 md:py-14" : "md:col-span-3"} ${i < features.length - 1 ? "md:border-r border-line" : ""}`}
               >
                 <f.icon size={18} className="text-accent" />
-                <h3 className="mt-8 font-display text-xl font-bold tracking-tight2">
-                  {f.title}
-                </h3>
+                <h3 className="mt-8 font-display text-xl font-bold tracking-tight2">{f.title}</h3>
                 <p className="mt-3 text-sm text-textSecondary leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -222,9 +221,7 @@ export default function LandingPage() {
                 <span className="col-span-5 md:col-span-4 font-display text-2xl md:text-3xl font-bold tracking-tight2 text-textPrimary">
                   {s.t}
                 </span>
-                <span className="col-span-6 md:col-span-7 text-sm text-textSecondary">
-                  {s.d}
-                </span>
+                <span className="col-span-6 md:col-span-7 text-sm text-textSecondary">{s.d}</span>
                 <ArrowUpRight
                   size={20}
                   className="col-span-12 md:col-span-1 ml-auto text-textMuted group-hover:text-accent transition-colors"

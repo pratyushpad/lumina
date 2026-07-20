@@ -1,4 +1,10 @@
-import { motion, HTMLMotionProps, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import {
+  motion,
+  HTMLMotionProps,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
 import { useRef } from "react";
 import { cn } from "@/lib/cn";
 
@@ -58,7 +64,7 @@ export function GradientButton({
         "relative inline-flex select-none items-center justify-center gap-2 px-5 py-2.5",
         "rounded-none text-sm font-medium tracking-tight transition-colors",
         VARIANTS[variant],
-        className
+        className,
       )}
       {...props}
     >

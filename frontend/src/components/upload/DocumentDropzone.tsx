@@ -30,7 +30,7 @@ export function DocumentDropzone({ sessionId }: { sessionId: string }) {
         }
       }
     },
-    [sessionId, addDocument]
+    [sessionId, addDocument],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

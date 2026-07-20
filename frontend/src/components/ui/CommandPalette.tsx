@@ -68,7 +68,7 @@ export function CommandPalette() {
     } catch {
       toast.error(
         "Could not create session",
-        "The server may be waking up. Give it up to a minute and try again."
+        "The server may be waking up. Give it up to a minute and try again.",
       );
     }
   };
@@ -126,7 +126,7 @@ export function CommandPalette() {
     if (!query.trim()) return all;
     const q = query.toLowerCase();
     return all.filter(
-      (c) => c.label.toLowerCase().includes(q) || c.hint?.toLowerCase().includes(q)
+      (c) => c.label.toLowerCase().includes(q) || c.hint?.toLowerCase().includes(q),
     );
   }, [all, query]);
 
@@ -181,9 +181,7 @@ export function CommandPalette() {
             </div>
             <div className="max-h-[50vh] overflow-y-auto">
               {filtered.length === 0 && (
-                <div className="px-4 py-6 text-sm text-textMuted text-center">
-                  No matches
-                </div>
+                <div className="px-4 py-6 text-sm text-textMuted text-center">No matches</div>
               )}
               {filtered.map((c, i) => {
                 const Icon = c.icon;
@@ -198,9 +196,7 @@ export function CommandPalette() {
                     }`}
                   >
                     <Icon size={14} className={active ? "text-accent" : "text-textMuted"} />
-                    <span className="flex-1 truncate font-medium tracking-tight2">
-                      {c.label}
-                    </span>
+                    <span className="flex-1 truncate font-medium tracking-tight2">{c.label}</span>
                     {c.hint && (
                       <span className="text-[10px] font-mono uppercase tracking-tight2 text-textMuted">
                         {c.hint}
@@ -220,7 +216,9 @@ export function CommandPalette() {
                 <span>↑↓ navigate</span>
                 <span>↵ open</span>
               </span>
-              <span>{filtered.length} result{filtered.length === 1 ? "" : "s"}</span>
+              <span>
+                {filtered.length} result{filtered.length === 1 ? "" : "s"}
+              </span>
             </div>
           </motion.div>
         </motion.div>

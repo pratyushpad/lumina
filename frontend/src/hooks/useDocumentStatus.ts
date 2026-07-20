@@ -4,9 +4,7 @@ import { useDocumentStore } from "@/stores/documentStore";
 import { toast } from "@/stores/toastStore";
 
 export function useDocumentStatusPolling(sessionId: string | null) {
-  const documents = useDocumentStore((s) =>
-    sessionId ? s.documents[sessionId] || [] : []
-  );
+  const documents = useDocumentStore((s) => (sessionId ? s.documents[sessionId] || [] : []));
   const updateDocument = useDocumentStore((s) => s.updateDocument);
   const notifiedRef = useRef<Set<string>>(new Set());
 

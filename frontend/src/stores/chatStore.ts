@@ -22,8 +22,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   streamingCitations: [],
   streamingMeta: null,
   isStreaming: false,
-  setMessages: (sessionId, m) =>
-    set((s) => ({ messages: { ...s.messages, [sessionId]: m } })),
+  setMessages: (sessionId, m) => set((s) => ({ messages: { ...s.messages, [sessionId]: m } })),
   addMessage: (sessionId, m) =>
     set((s) => ({
       messages: { ...s.messages, [sessionId]: [...(s.messages[sessionId] || []), m] },

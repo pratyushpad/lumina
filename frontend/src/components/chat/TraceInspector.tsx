@@ -30,10 +30,7 @@ function StageRow({ stage, maxMs }: { stage: TraceStage; maxMs: number }) {
           {stage.stage}
         </span>
         <span className="relative h-2 flex-1 bg-background">
-          <span
-            className="absolute inset-y-0 left-0 bg-accent"
-            style={{ width: `${widthPct}%` }}
-          />
+          <span className="absolute inset-y-0 left-0 bg-accent" style={{ width: `${widthPct}%` }} />
         </span>
         <span className="w-16 shrink-0 text-right font-mono text-[11px] text-textMuted">
           {stage.latency_ms} ms
@@ -76,13 +73,7 @@ function StageRow({ stage, maxMs }: { stage: TraceStage; maxMs: number }) {
   );
 }
 
-export function TraceInspector({
-  messageId,
-  onClose,
-}: {
-  messageId: string;
-  onClose: () => void;
-}) {
+export function TraceInspector({ messageId, onClose }: { messageId: string; onClose: () => void }) {
   const [trace, setTrace] = useState<Trace | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,9 +104,7 @@ export function TraceInspector({
           className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-line bg-surface p-5"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-sm uppercase tracking-tight2">
-              Query trace
-            </h2>
+            <h2 className="font-display text-sm uppercase tracking-tight2">Query trace</h2>
             <button onClick={onClose} className="hairline bg-card p-1.5">
               <X size={14} />
             </button>
