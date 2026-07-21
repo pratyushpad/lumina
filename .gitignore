@@ -39,3 +39,6 @@ eval/corpus/*.pdf
 
 # stray esbuild output from SSE debugging
 sse-*/
+
+# local agent config
+.claude/
