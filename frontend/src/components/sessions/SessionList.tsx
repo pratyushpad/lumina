@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Check, Lock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/lib/api";
 import { isDemoSession } from "@/lib/constants";
 import { useSessionStore } from "@/stores/sessionStore";
@@ -16,10 +17,17 @@ export function SessionList() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<Session | null>(null);
 
-  const handleDelete = async (e: React.MouseEvent, s: Session) => {
+  const requestDelete = (e: React.MouseEvent, s: Session) => {
     e.stopPropagation();
-    if (!confirm(`Delete session "${s.name}"?`)) return;
+    setPendingDelete(s);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const s = pendingDelete;
+    setPendingDelete(null);
     try {
       await api.deleteSession(s.id);
       remove(s.id);
@@ -131,7 +139,7 @@ export function SessionList() {
                     <Pencil size={12} />
                   </button>
                   <button
-                    onClick={(e) => handleDelete(e, s)}
+                    onClick={(e) => requestDelete(e, s)}
                     aria-label={`Delete ${s.name}`}
                     className="text-textMuted hover:text-textPrimary transition-colors"
                   >
@@ -147,6 +155,19 @@ export function SessionList() {
           </motion.div>
         );
       })}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete session"
+        description={
+          pendingDelete
+            ? `Delete session "${pendingDelete.name}"? This can't be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

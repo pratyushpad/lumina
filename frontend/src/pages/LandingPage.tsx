@@ -6,25 +6,45 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SplitText } from "@/components/ui/SplitText";
+import { KnowledgeGraph } from "@/components/landing/KnowledgeGraph";
+import { ProductTeaser } from "@/components/landing/ProductTeaser";
+import { HowItWorksScroll } from "@/components/landing/HowItWorksScroll";
+import { FeatureCard, type FeatureMetric } from "@/components/landing/FeatureCard";
 
-const features = [
+const features: Array<{
+  n: string;
+  icon: typeof FileSearch;
+  title: string;
+  desc: string;
+  metrics: FeatureMetric[];
+  tone: "accent" | "accent2";
+}> = [
   {
     n: "01",
     icon: FileSearch,
     title: "Multimodal indexing",
     desc: "PDFs, images, tables, charts. Indexed with semantic embeddings and described with vision when needed.",
+    metrics: [{ value: 4, label: "content types indexed" }],
+    tone: "accent",
   },
   {
     n: "02",
     icon: Quote,
     title: "Cited by default",
     desc: "Every claim is grounded in a chunk from your documents. One click opens the source passage.",
+    metrics: [{ value: 100, suffix: "%", label: "claims grounded to a source" }],
+    tone: "accent2",
   },
   {
     n: "03",
     icon: Zap,
     title: "Cross-encoder reranking",
     desc: "Bi-encoder recall, cross-encoder precision. The model sees the five most relevant chunks, not fifty.",
+    metrics: [
+      { value: 15, label: "candidates retrieved" },
+      { value: 5, label: "reranked to the top" },
+    ],
+    tone: "accent",
   },
 ];
 
@@ -107,8 +127,13 @@ export default function LandingPage() {
       {/* Hero */}
       <section
         ref={heroRef}
-        className="relative flex min-h-[88vh] items-center justify-center px-6 noise"
+        className="relative flex min-h-[88vh] items-center justify-center overflow-hidden px-6 noise"
       >
+        <KnowledgeGraph
+          scrollProgress={scrollYProgress}
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 h-full w-full max-w-4xl opacity-70 md:opacity-90"
+        />
+
         <motion.div
           style={{ y: heroY, opacity: heroOpacity }}
           className="relative z-10 mx-auto w-full max-w-6xl"
@@ -151,6 +176,31 @@ export default function LandingPage() {
 
       <Marquee />
 
+      {/* Live product teaser */}
+      <section className="border-b border-line px-6 py-24">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 max-w-2xl"
+          >
+            <span className="font-mono text-[11px] uppercase tracking-tight2 text-accent">
+              See it work
+            </span>
+            <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight3">
+              <SplitText text="Ask. Grounded. Cited." inView />
+            </h2>
+            <p className="mt-4 text-sm text-textSecondary">
+              A looping illustration of how an answer appears — grounded, with its sources cited
+              inline. The live demo runs the real retrieval pipeline on two classic papers.
+            </p>
+          </motion.div>
+
+          <ProductTeaser />
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="border-b border-line px-6 py-24">
         <div className="mx-auto max-w-6xl">
@@ -173,19 +223,18 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-12 border border-line">
             {features.map((f, i) => (
-              <motion.div
+              <FeatureCard
                 key={f.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.5 }}
-                whileHover={{ backgroundColor: "rgba(255,255,255,0.02)" }}
-                className={`p-8 ${i === 0 ? "md:col-span-6 md:py-14" : "md:col-span-3"} ${i < features.length - 1 ? "md:border-r border-line" : ""}`}
-              >
-                <f.icon size={18} className="text-accent" />
-                <h3 className="mt-8 font-display text-xl font-bold tracking-tight2">{f.title}</h3>
-                <p className="mt-3 text-sm text-textSecondary leading-relaxed">{f.desc}</p>
-              </motion.div>
+                n={f.n}
+                icon={f.icon}
+                title={f.title}
+                desc={f.desc}
+                metrics={f.metrics}
+                tone={f.tone}
+                delay={i * 0.08}
+                span={i === 0 ? "md:col-span-6" : "md:col-span-3"}
+                border={i < features.length - 1}
+              />
             ))}
           </div>
         </div>
@@ -207,28 +256,7 @@ export default function LandingPage() {
             </h2>
           </motion.div>
 
-          <div className="border-t border-line">
-            {steps.map((s, i) => (
-              <motion.div
-                key={s.n}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                whileHover={{ x: 4 }}
-                className="grid grid-cols-12 items-center border-b border-line py-8 group transition-colors hover:bg-textPrimary/[0.03]"
-              >
-                <span className="col-span-5 md:col-span-4 font-display text-2xl md:text-3xl font-bold tracking-tight2 text-textPrimary">
-                  {s.t}
-                </span>
-                <span className="col-span-6 md:col-span-7 text-sm text-textSecondary">{s.d}</span>
-                <ArrowUpRight
-                  size={20}
-                  className="col-span-12 md:col-span-1 ml-auto text-textMuted group-hover:text-accent transition-colors"
-                />
-              </motion.div>
-            ))}
-          </div>
+          <HowItWorksScroll steps={steps} />
         </div>
       </section>
 

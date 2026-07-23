@@ -1,0 +1,58 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F6F4EE" />
+
+  <!-- faint corpus mesh -->
+  <g stroke="#201E19" stroke-opacity="0.08" stroke-width="1">
+    <line x1="80" y1="60" x2="180" y2="140" />
+    <line x1="180" y1="140" x2="120" y2="240" />
+    <line x1="120" y1="240" x2="60" y2="320" />
+    <line x1="1000" y1="70" x2="1080" y2="150" />
+    <line x1="1080" y1="150" x2="1140" y2="260" />
+    <line x1="1140" y1="260" x2="1080" y2="380" />
+    <line x1="1080" y1="380" x2="1000" y2="470" />
+    <line x1="200" y1="480" x2="140" y2="560" />
+    <line x1="900" y1="520" x2="980" y2="580" />
+  </g>
+  <g fill="#201E19" fill-opacity="0.22">
+    <circle cx="80" cy="60" r="3" />
+    <circle cx="180" cy="140" r="3" />
+    <circle cx="120" cy="240" r="3" />
+    <circle cx="60" cy="320" r="3" />
+    <circle cx="1000" cy="70" r="3" />
+    <circle cx="1080" cy="150" r="3" />
+    <circle cx="1140" cy="260" r="3" />
+    <circle cx="1080" cy="380" r="3" />
+    <circle cx="1000" cy="470" r="3" />
+    <circle cx="200" cy="480" r="3" />
+    <circle cx="140" cy="560" r="3" />
+    <circle cx="900" cy="520" r="3" />
+    <circle cx="980" cy="580" r="3" />
+  </g>
+
+  <!-- retrieval ring around the wordmark's accent dot -->
+  <g stroke-width="1.5" fill="none">
+    <path d="M760,315 L640,230" stroke="#1D4ED8" stroke-opacity="0.6" />
+    <path d="M760,315 L860,210" stroke="#B27B2C" stroke-opacity="0.6" />
+    <path d="M760,315 L880,380" stroke="#1D4ED8" stroke-opacity="0.6" />
+    <path d="M760,315 L700,430" stroke="#B27B2C" stroke-opacity="0.6" />
+  </g>
+  <circle cx="640" cy="230" r="6" fill="#1D4ED8" />
+  <circle cx="860" cy="210" r="5" fill="#B27B2C" />
+  <circle cx="880" cy="380" r="6" fill="#1D4ED8" />
+  <circle cx="700" cy="430" r="5" fill="#B27B2C" />
+  <circle cx="760" cy="315" r="8" fill="#201E19" />
+  <circle cx="760" cy="315" r="15" fill="none" stroke="#201E19" stroke-opacity="0.25" />
+
+  <!-- wordmark -->
+  <text x="90" y="300" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="700" font-size="96" letter-spacing="-4" fill="#201E19">LUMINA<tspan fill="#1D4ED8">.</tspan></text>
+
+  <!-- tagline -->
+  <text x="92" y="360" font-family="Source Serif 4, Georgia, serif" font-size="30" fill="#5C574D">Talk to your documents.</text>
+
+  <!-- eyebrow label -->
+  <text x="92" y="150" font-family="JetBrains Mono, ui-monospace, monospace" font-size="16" letter-spacing="2" fill="#8A8478">OPEN-SOURCE MULTIMODAL RAG WORKBENCH</text>
+
+  <!-- footer rule + mono label -->
+  <line x1="90" y1="540" x2="1110" y2="540" stroke="#201E19" stroke-opacity="0.12" />
+  <text x="90" y="575" font-family="JetBrains Mono, ui-monospace, monospace" font-size="15" letter-spacing="1" fill="#8A8478">GROUNDED · CITED · SELF-HOSTABLE</text>
+</svg>

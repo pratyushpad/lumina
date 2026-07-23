@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUp, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { StreamingMessage } from "./StreamingMessage";
@@ -29,6 +29,7 @@ export function ChatArea({
   const setStreamingMeta = useChatStore((s) => s.setStreamingMeta);
   const clearStream = useChatStore((s) => s.clearStream);
 
+  const reduceMotion = useReducedMotion();
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string | null>(null);
   const [capacityNotice, setCapacityNotice] = useState<string | null>(null);
@@ -145,7 +146,7 @@ export function ChatArea({
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
           {messages.length === 0 && !isStreaming && suggestions && suggestions.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center gap-6 pt-16 text-center"
             >
@@ -183,7 +184,7 @@ export function ChatArea({
             m.role === "user" ? (
               <motion.div
                 key={m.id}
-                initial={{ opacity: 0, y: 4 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="self-end max-w-[85%] hairline-strong bg-textPrimary text-background px-4 py-2.5 text-sm font-medium tracking-tight2"
               >
@@ -211,7 +212,7 @@ export function ChatArea({
         <div className="mx-auto flex max-w-3xl flex-col gap-2">
           {capacityNotice && (
             <motion.div
-              initial={{ opacity: 0, y: 4 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               role="status"
               className="flex items-start justify-between gap-3 hairline bg-card px-3 py-2 text-xs text-textSecondary"

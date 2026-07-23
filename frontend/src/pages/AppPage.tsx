@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { MessagesSquare } from "lucide-react";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -7,10 +8,13 @@ import { DocumentPanel } from "@/components/chat/DocumentPanel";
 import { useDocumentStatusPolling } from "@/hooks/useDocumentStatus";
 import { api } from "@/lib/api";
 import { DEMO_SESSION_ID } from "@/lib/constants";
+import { duration, ease, fadeRise, staggerStep } from "@/lib/motion";
 import { useAuthStore } from "@/stores/authStore";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { toast } from "@/stores/toastStore";
+
+const EMPTY_STATE_FEATURES = ["Hybrid retrieval", "Cited answers", "Query trace"];
 
 const DEMO_SUGGESTIONS = [
   {
@@ -42,6 +46,7 @@ export default function AppPage() {
   const setDocuments = useDocumentStore((s) => s.setDocuments);
   const hydrateAuth = useAuthStore((s) => s.hydrate);
   const [searchParams, setSearchParams] = useSearchParams();
+  const reduceMotion = useReducedMotion();
 
   // Turn a stored session token into a signed-in user (or drop it if stale).
   useEffect(() => {
@@ -92,27 +97,68 @@ export default function AppPage() {
       <main className="flex flex-1 flex-col overflow-hidden">
         {!activeSessionId ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={reduceMotion ? "visible" : "hidden"}
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: staggerStep, delayChildren: 0.05 } },
+            }}
             className="flex flex-1 items-center justify-center px-6"
           >
-            <div className="text-center max-w-md">
-              <div className="text-[10px] uppercase tracking-tight2 text-textMuted font-mono">
-                01 / Begin
-              </div>
-              <h2 className="mt-3 font-display text-4xl font-bold tracking-tight3">
+            <div className="max-w-md hairline-strong bg-surface px-8 py-10 text-center">
+              <motion.div
+                variants={fadeRise}
+                transition={{ duration: duration.base, ease }}
+                className="mx-auto mb-6 flex h-12 w-12 items-center justify-center hairline bg-card"
+              >
+                <MessagesSquare size={20} className="text-accent" strokeWidth={1.75} />
+              </motion.div>
+              <motion.div
+                variants={fadeRise}
+                transition={{ duration: duration.base, ease }}
+                className="font-mono text-[10px] uppercase tracking-tight2 text-textMuted"
+              >
+                Workbench idle
+              </motion.div>
+              <motion.h2
+                variants={fadeRise}
+                transition={{ duration: duration.base, ease }}
+                className="mt-3 font-display text-4xl font-bold tracking-tight3"
+              >
                 Select or create
                 <br />a session.
-              </h2>
-              <p className="mt-4 text-sm text-textSecondary">
+              </motion.h2>
+              <motion.p
+                variants={fadeRise}
+                transition={{ duration: duration.base, ease }}
+                className="mt-4 text-sm text-textSecondary"
+              >
                 {sessions.length === 0
                   ? "Hit New session in the sidebar to start."
                   : "Pick one from the sidebar, or create a new one."}
-              </p>
-              <div className="mt-8 inline-flex items-center gap-2 hairline bg-card px-3 py-1.5 text-[10px] uppercase tracking-tight2 text-textMuted font-mono">
+              </motion.p>
+              <motion.div
+                variants={fadeRise}
+                transition={{ duration: duration.base, ease }}
+                className="mt-8 flex flex-wrap items-center justify-center gap-2 border-t border-line pt-6"
+              >
+                {EMPTY_STATE_FEATURES.map((f) => (
+                  <span
+                    key={f}
+                    className="hairline bg-card px-2.5 py-1 text-[10px] font-mono uppercase tracking-tight2 text-textMuted"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </motion.div>
+              <motion.div
+                variants={fadeRise}
+                transition={{ duration: duration.base, ease }}
+                className="mt-6 inline-flex items-center gap-2 hairline bg-card px-3 py-1.5 text-[10px] uppercase tracking-tight2 text-textMuted font-mono"
+              >
                 <span className="h-1.5 w-1.5 bg-accent" />
                 Ready
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         ) : (

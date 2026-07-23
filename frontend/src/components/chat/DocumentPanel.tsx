@@ -1,6 +1,8 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { FileText, Image as ImageIcon, Lock, X } from "lucide-react";
+import { useState } from "react";
 import { DocumentDropzone } from "@/components/upload/DocumentDropzone";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/lib/api";
 import { isDemoSession } from "@/lib/constants";
 import { useDocumentStore } from "@/stores/documentStore";
@@ -10,12 +12,12 @@ import type { Document } from "@/types";
 function StatusBadge({ status }: { status: Document["status"] }) {
   const map = {
     processing: {
-      cls: "text-amber-300 border-amber-300/40",
+      cls: "text-warn border-warn/40",
       label: "PROCESSING",
-      dot: "bg-amber-300 animate-pulse",
+      dot: "bg-warn animate-pulse",
     },
-    ready: { cls: "text-textPrimary border-textPrimary/40", label: "READY", dot: "bg-accent" },
-    error: { cls: "text-rose-300 border-rose-300/40", label: "ERROR", dot: "bg-rose-300" },
+    ready: { cls: "text-ok border-ok/40", label: "READY", dot: "bg-ok" },
+    error: { cls: "text-error border-error/40", label: "ERROR", dot: "bg-error" },
   } as const;
   const v = map[status];
   return (
@@ -32,9 +34,13 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
   const docs = useDocumentStore((s) => s.documents[sessionId] || []);
   const removeDocument = useDocumentStore((s) => s.removeDocument);
   const readOnly = isDemoSession(sessionId);
+  const reduceMotion = useReducedMotion();
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; filename: string } | null>(null);
 
-  const handleDelete = async (id: string, filename: string) => {
-    if (!confirm(`Remove "${filename}" from this session?`)) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setPendingDelete(null);
     try {
       await api.deleteDocument(id);
       removeDocument(sessionId, id);
@@ -57,7 +63,7 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
         {docs.map((d) => (
           <motion.div
             key={d.id}
-            initial={{ opacity: 0, y: 4 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className="group flex items-center gap-2.5 hairline bg-card px-3 py-2 text-sm"
           >
@@ -73,7 +79,7 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
             <StatusBadge status={d.status} />
             {!readOnly && (
               <button
-                onClick={() => handleDelete(d.id, d.filename)}
+                onClick={() => setPendingDelete({ id: d.id, filename: d.filename })}
                 aria-label={`Remove ${d.filename}`}
                 className="ml-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 text-textMuted hover:text-textPrimary"
               >
@@ -83,6 +89,19 @@ export function DocumentPanel({ sessionId }: { sessionId: string }) {
           </motion.div>
         ))}
       </div>
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Remove document"
+        description={
+          pendingDelete
+            ? `Remove "${pendingDelete.filename}" from this session? This can't be undone.`
+            : undefined
+        }
+        confirmLabel="Remove"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

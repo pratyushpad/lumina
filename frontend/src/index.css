@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Design tokens — single source of truth.
+ *
+ * Solid colors are stored as space-separated RGB channels so Tailwind can
+ * inject alpha via `rgb(var(--x) / <alpha-value>)` (enables `bg-accent/10`,
+ * `text-textPrimary/40`, etc.). Composite tokens that already carry an alpha
+ * (lines, dim fills) are stored as full color values.
+ *
+ * The warm-paper editorial palette is unchanged; this release adds a deeper
+ * accent, a warm ochre secondary, and an earthy semantic set (ok/warn/error/
+ * local) tuned to sit on the paper ground instead of neon Tailwind defaults.
+ */
+:root {
+  /* Surfaces */
+  --paper: 246 244 238; /* #F6F4EE */
+  --surface: 251 250 245; /* #FBFAF5 */
+  --card: 255 255 255; /* #FFFFFF */
+
+  /* Ink / text */
+  --ink: 32 30 25; /* #201E19 */
+  --text-secondary: 92 87 77; /* #5C574D */
+  --text-muted: 138 132 120; /* #8A8478 */
+
+  /* Accents */
+  --accent: 29 78 216; /* #1D4ED8 royal blue */
+  --accent-deep: 30 64 175; /* #1E40AF pressed / depth */
+  --accent2: 178 123 44; /* #B27B2C warm ochre */
+
+  /* Semantic (earthy, paper-tuned) */
+  --ok: 62 122 84; /* #3E7A54 muted green */
+  --warn: 176 121 31; /* #B0791F amber */
+  --error: 174 66 48; /* #AE4230 brick */
+  --local: 46 125 116; /* #2E7D74 teal — local model */
+
+  /* Composite (alpha baked in) */
+  --line: rgba(32, 30, 25, 0.12);
+  --line-strong: rgba(32, 30, 25, 0.28);
+  --accent-dim: rgba(29, 78, 216, 0.1);
+  --accent2-dim: rgba(178, 123, 44, 0.1);
+}
+
 html,
 body,
 #root {
@@ -9,14 +50,14 @@ body,
 }
 
 body {
-  background-color: #f6f4ee;
-  color: #201e19;
+  background-color: rgb(var(--paper));
+  color: rgb(var(--ink));
   font-feature-settings: "ss01", "cv11";
 }
 
 ::selection {
-  background: #1d4ed8;
-  color: #f6f4ee;
+  background: rgb(var(--accent));
+  color: rgb(var(--paper));
 }
 
 ::-webkit-scrollbar {
@@ -27,28 +68,28 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(32, 30, 25, 0.15);
+  background: rgb(var(--ink) / 0.15);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(32, 30, 25, 0.3);
+  background: rgb(var(--ink) / 0.3);
 }
 
 :focus-visible {
-  outline: 3px solid #1d4ed8;
+  outline: 3px solid rgb(var(--accent));
   outline-offset: 2px;
 }
 
 /* Sharp dividers and edges */
 .hairline {
-  border: 1px solid rgba(32, 30, 25, 0.12);
+  border: 1px solid var(--line);
 }
 .hairline-strong {
-  border: 1px solid rgba(32, 30, 25, 0.28);
+  border: 1px solid var(--line-strong);
 }
 
 /* Accent underline used for active states */
 .accent-bar {
-  box-shadow: inset 0 -2px 0 0 #1d4ed8;
+  box-shadow: inset 0 -2px 0 0 rgb(var(--accent));
 }
 
 /* Paper grain: faint print texture on the light ground */
@@ -60,8 +101,8 @@ body {
   opacity: 0.05;
   mix-blend-mode: multiply;
   background-image:
-    radial-gradient(rgba(32, 30, 25, 0.5) 1px, transparent 1px),
-    radial-gradient(rgba(32, 30, 25, 0.35) 1px, transparent 1px);
+    radial-gradient(rgb(var(--ink) / 0.5) 1px, transparent 1px),
+    radial-gradient(rgb(var(--ink) / 0.35) 1px, transparent 1px);
   background-size:
     3px 3px,
     5px 5px;
@@ -83,6 +124,30 @@ body {
   animation: marquee 30s linear infinite;
 }
 
+/* Shimmer sweep for skeleton / loading surfaces (transform-only) */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--ink) / 0.06),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
 /* Reduced motion: marquee becomes a static wrapped wall, everything CSS-driven stops */
 @media (prefers-reduced-motion: reduce) {
   .marquee-track {
@@ -93,6 +158,10 @@ body {
     row-gap: 0.75rem;
   }
   .marquee-dup {
+    display: none;
+  }
+  .shimmer::after {
+    animation: none;
     display: none;
   }
   html {
